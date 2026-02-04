@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
-        // แก้ไขลิ้งค์ "น้ำมัน" ที่นี่
         const URL_FUEL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLxlqlfXntTk-z4x45kGjZ1OjHFnpCeaqjGZGpkfohr3difiJQsI-p-3iZwgyM7UO35kRztltMKgbd/pub?gid=700157187&single=true&output=csv";
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { gray: { 850: '#1f2937', 900: '#111827' } } } } }
     </script>
@@ -21,6 +20,7 @@
     <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col hidden md:flex">
         <div class="p-6 border-b border-gray-800"><h1 class="text-xl font-bold text-white"><i class="fas fa-cubes text-blue-500 mr-2"></i>EMS System</h1></div>
         <nav class="flex-1 py-4 space-y-1">
+            <a href="index.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white mb-4"><i class="fas fa-home w-6"></i> กลับหน้าหลัก</a>
             <a href="machines.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-truck-moving w-6"></i> ข้อมูลเครื่องจักร</a>
             <a href="tax.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-file-invoice-dollar w-6"></i> แจ้งเตือนภาษี</a>
             <a href="projects.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-building w-6"></i> โครงการ</a>
@@ -37,20 +37,17 @@
         </header>
 
         <div class="flex-1 flex flex-col p-6 overflow-hidden">
-            <!-- Chart Section -->
             <div class="h-[250px] shrink-0 mb-6 flex gap-6">
                 <div class="flex-1 glass-panel rounded-xl p-4 relative">
                     <canvas id="fuelChart"></canvas>
                 </div>
             </div>
 
-            <!-- Filter Status -->
             <div id="filterBar" class="hidden mb-2 flex items-center justify-between bg-blue-900/20 px-4 py-2 rounded border border-blue-800">
                 <span class="text-sm text-blue-300">กรองข้อมูล: <b id="filterTarget"></b></span>
                 <button onclick="resetFilter()" class="text-xs bg-blue-700 text-white px-3 py-1 rounded">Reset</button>
             </div>
 
-            <!-- Table Section -->
             <div class="flex-1 overflow-auto glass-panel rounded-xl border border-gray-800">
                 <table class="w-full text-left">
                     <thead class="bg-gray-900 text-gray-400 text-xs uppercase sticky top-0 z-10">
@@ -81,17 +78,24 @@
             const stats = {};
             let totalLiters = 0;
 
+            // คอลัมน์เป้าหมายจากรูปภาพ
+            const idKey = 'รหัสรถ'; 
+            const literKey = 'ปริมาณ(ลิตร)';
+
             fuelData.forEach(row => {
-                const plate = row['ทะเบียน'] || row['plate'] || row['Plate'] || 'Unknown';
-                const liters = parseFloat((row['จำนวนลิตร'] || row['liters'] || row['qty'] || '0').replace(/,/g, ''));
-                if (!stats[plate]) stats[plate] = 0;
-                stats[plate] += liters;
-                totalLiters += liters;
+                const id = row[idKey] || 'ไม่ระบุ';
+                const valStr = row[literKey] || '0';
+                const liters = parseFloat(valStr.replace(/,/g, ''));
+                
+                if (!isNaN(liters)) {
+                    if (!stats[id]) stats[id] = 0;
+                    stats[id] += liters;
+                    totalLiters += liters;
+                }
             });
 
             document.getElementById('summary').textContent = `รวม ${totalLiters.toLocaleString()} ลิตร`;
 
-            // Sort Top 10
             const labels = Object.keys(stats).sort((a,b) => stats[b] - stats[a]).slice(0, 10);
             const data = labels.map(k => stats[k]);
 
@@ -119,7 +123,8 @@
         function filterTable(keyword) {
             document.getElementById('filterBar').classList.remove('hidden');
             document.getElementById('filterTarget').textContent = keyword;
-            const filtered = fuelData.filter(r => Object.values(r).join(' ').toLowerCase().includes(keyword.toLowerCase()));
+            // กรองโดยดูจากรหัสรถ
+            const filtered = fuelData.filter(r => (r['รหัสรถ']||'').includes(keyword));
             renderTable(filtered);
         }
 

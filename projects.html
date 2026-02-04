@@ -19,6 +19,7 @@
     <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col hidden md:flex">
         <div class="p-6 border-b border-gray-800"><h1 class="text-xl font-bold text-white"><i class="fas fa-cubes text-blue-500 mr-2"></i>EMS System</h1></div>
         <nav class="flex-1 py-4 space-y-1">
+            <a href="index.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white mb-4"><i class="fas fa-home w-6"></i> กลับหน้าหลัก</a>
             <a href="machines.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-truck-moving w-6"></i> ข้อมูลเครื่องจักร</a>
             <a href="tax.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-file-invoice-dollar w-6"></i> แจ้งเตือนภาษี</a>
             <a href="projects.html" class="flex items-center px-6 py-3 bg-blue-900/20 text-blue-400 border-r-2 border-blue-500"><i class="fas fa-building w-6"></i> โครงการ</a>
@@ -50,22 +51,32 @@
             const container = document.getElementById('projectContainer');
             const groups = {};
             
-            // หา Column ที่เป็น Site
-            const siteCol = ['site', 'project', 'location', 'หน่วยงาน', 'โครงการ', 'สถานที่'].find(k => Object.keys(data[0] || {}).some(key => key.toLowerCase().includes(k)));
+            // พยายามหาคอลัมน์ "โครงการ" หรือ "ไซต์"
+            const siteCol = ['โครงการ', 'site', 'project', 'location', 'หน่วยงาน', 'สถานที่'].find(k => Object.keys(data[0] || {}).some(key => key.toLowerCase().includes(k)));
 
             if (!siteCol) {
-                container.innerHTML = `<div class="col-span-full text-center text-gray-500">ไม่พบคอลัมน์ระบุโครงการ (เช่น Site, Project)</div>`;
+                container.innerHTML = `<div class="col-span-full text-center text-gray-500 pt-10">
+                    <i class="fas fa-info-circle text-2xl mb-2"></i><br>
+                    ไม่พบคอลัมน์ "โครงการ" ในไฟล์ข้อมูลหลัก<br>
+                    <span class="text-xs">กรุณาเพิ่มคอลัมน์ชื่อ "โครงการ" ใน Google Sheet หน้าแรก</span>
+                </div>`;
                 return;
             }
 
+            // หาชื่อคอลัมน์จริง
+            const realKey = Object.keys(data[0]).find(k => k.toLowerCase().includes(siteCol));
+
             data.forEach(item => {
-                const key = Object.keys(item).find(k => k.toLowerCase().includes(siteCol));
-                const siteName = item[key] || 'ไม่ระบุ';
+                const siteName = item[realKey] || 'ไม่ระบุ';
                 if (!groups[siteName]) groups[siteName] = [];
                 groups[siteName].push(item);
             });
 
-            container.innerHTML = Object.entries(groups).map(([site, items]) => `
+            container.innerHTML = Object.entries(groups).map(([site, items]) => {
+                // หาคอลัมน์ทะเบียนเพื่อแสดงผล
+                const plateKey = Object.keys(items[0] || {}).find(k => ['ทะเบียน', 'plate'].some(pk => k.toLowerCase().includes(pk))) || 'ทะเบียน';
+                
+                return `
                 <div class="glass-panel rounded-xl overflow-hidden flex flex-col">
                     <div class="p-4 bg-gray-800/50 border-b border-gray-700 flex justify-between items-center">
                         <h3 class="font-bold text-white"><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i> ${site}</h3>
@@ -73,12 +84,12 @@
                     </div>
                     <div class="p-4 space-y-2 max-h-[300px] overflow-y-auto">
                         ${items.map(m => {
-                            const plate = m['ทะเบียน'] || m['plate'] || m['Plate'] || 'No Plate';
+                            const plate = m[plateKey] || 'No Plate';
                             return `<div class="text-sm text-gray-400 border-b border-gray-800 pb-1 last:border-0"><i class="fas fa-truck text-xs mr-2"></i> ${plate}</div>`
                         }).join('')}
                     </div>
-                </div>
-            `).join('');
+                </div>`
+            }).join('');
         }
     </script>
 </body>
