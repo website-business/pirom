@@ -4,16 +4,19 @@ const SHEET_URLS = {
     maintenance: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLxlqlfXntTk-z4x45kGjZ1OjHFnpCeaqjGZGpkfohr3difiJQsI-p-3iZwgyM7UO35kRztltMKgbd/pub?gid=1964968763&single=true&output=csv'
 };
 
-const CACHE_KEY = 'machinery_data_v2';
+const CACHE_KEY = 'machinery_data_v3'; // ใช้ Key เดิมเพื่อให้ระบบจำ cache ได้ถูกต้อง
 const CACHE_DURATION = 5 * 60 * 1000; 
 
-let appData = { machines: [], fuel: [], maintenance: [] };
+// คืนค่า appData ให้มีโครงสร้าง alerts ตามเดิม (สำหรับ Dashboard)
+let appData = { machines: [], fuel: [], maintenance: [], alerts: { expired: [], warning: [], all: [] } };
 
 // --- Chart Defaults ---
 if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Bai Jamjuree', sans-serif";
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.05)';
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
 }
 
 // --- Helpers ---
@@ -41,28 +44,51 @@ function cleanCSV(data) {
 
 // --- Data Loader ---
 async function loadData(onSuccess) {
-    const cached = sessionStorage.getItem(CACHE_KEY);
-    if (cached) {
-        const { timestamp, data } = JSON.parse(cached);
-        if (new Date().getTime() - timestamp < CACHE_DURATION) {
-            appData = data;
-            if (onSuccess) onSuccess();
-            return;
+    // 1. Check Cache
+    try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+            const { timestamp, data } = JSON.parse(cached);
+            // เช็คว่าแคชยังไม่หมดอายุและมีข้อมูลอยู่จริง
+            if (new Date().getTime() - timestamp < CACHE_DURATION && data.machines && data.machines.length > 0) {
+                console.log("Using cached data");
+                appData = data;
+                if (onSuccess) onSuccess();
+                return;
+            }
         }
+    } catch (e) {
+        console.warn("Cache corrupted, reloading...");
+        sessionStorage.removeItem(CACHE_KEY);
     }
 
+    // 2. Fetch New
     try {
-        const [mRes, fRes, maRes] = await Promise.all([
-            fetch(SHEET_URLS.machines).then(r => r.text()),
-            fetch(SHEET_URLS.fuel).then(r => r.text()),
-            fetch(SHEET_URLS.maintenance).then(r => r.text())
+        if (typeof Papa === 'undefined') throw new Error("PapaParse library not loaded");
+
+        const responses = await Promise.all([
+            fetch(SHEET_URLS.machines),
+            fetch(SHEET_URLS.fuel),
+            fetch(SHEET_URLS.maintenance)
         ]);
 
-        appData.machines = cleanCSV(Papa.parse(mRes, { header: true, skipEmptyLines: true }).data);
-        appData.fuel = cleanCSV(Papa.parse(fRes, { header: true, skipEmptyLines: true }).data);
-        appData.maintenance = cleanCSV(Papa.parse(maRes, { header: true, skipEmptyLines: true }).data);
+        // Check for HTTP Errors
+        for (const r of responses) {
+            if (!r.ok) throw new Error(`HTTP Error: ${r.status}`);
+        }
 
-        // Normalize Keys (แก้ปัญหากรณีชื่อคอลัมน์ไม่ตรง)
+        const [mText, fText, maText] = await Promise.all(responses.map(r => r.text()));
+
+        appData.machines = cleanCSV(Papa.parse(mText, { header: true, skipEmptyLines: true }).data);
+        appData.fuel = cleanCSV(Papa.parse(fText, { header: true, skipEmptyLines: true }).data);
+        appData.maintenance = cleanCSV(Papa.parse(maText, { header: true, skipEmptyLines: true }).data);
+
+        // Validate Data
+        if (!appData.machines.length || !appData.fuel.length) {
+            throw new Error("Data is empty or invalid CSV format");
+        }
+
+        // Standardize Keys
         const normalize = (list) => {
             list.forEach(row => {
                 const findKey = (partial) => Object.keys(row).find(k => k.includes(partial));
@@ -77,10 +103,19 @@ async function loadData(onSuccess) {
         normalize(appData.fuel);
         normalize(appData.maintenance);
 
+        // Sort Data
+        appData.fuel.sort((a, b) => { const da = parseDate(a['วันที่']); const db = parseDate(b['วันที่']); return (da && db) ? da - db : 0; });
+
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: new Date().getTime(), data: appData }));
+        
         if (onSuccess) onSuccess();
+
     } catch (e) {
         console.error("Load Failed", e);
-        alert("โหลดข้อมูลไม่สำเร็จ กรุณารีเฟรช");
+        sessionStorage.removeItem(CACHE_KEY); // Clear bad cache
+        alert(`เกิดข้อผิดพลาด: ${e.message}\nกรุณาตรวจสอบอินเทอร์เน็ต แล้วรีเฟรชใหม่`);
+        // Hide loader even on error
+        const loader = document.getElementById('loading');
+        if(loader) loader.style.display = 'none';
     }
 }
