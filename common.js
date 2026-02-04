@@ -4,7 +4,7 @@ const SHEET_URLS = {
     maintenance: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLxlqlfXntTk-z4x45kGjZ1OjHFnpCeaqjGZGpkfohr3difiJQsI-p-3iZwgyM7UO35kRztltMKgbd/pub?gid=1964968763&single=true&output=csv'
 };
 
-const CACHE_KEY = 'machinery_data_v3'; // ใช้ Key เดิมเพื่อให้ระบบจำ cache ได้ถูกต้อง
+const CACHE_KEY = 'machinery_data_v4'; // เปลี่ยน key เพื่อบังคับโหลดใหม่
 const CACHE_DURATION = 5 * 60 * 1000; 
 
 // คืนค่า appData ให้มีโครงสร้าง alerts ตามเดิม (สำหรับ Dashboard)
@@ -66,10 +66,14 @@ async function loadData(onSuccess) {
     try {
         if (typeof Papa === 'undefined') throw new Error("PapaParse library not loaded");
 
+        // เพิ่ม timestamp เพื่อป้องกัน cache ของ browser และ redirect: 'follow'
+        const fetchOptions = { redirect: 'follow' };
+        const getUrl = (url) => `${url}&t=${new Date().getTime()}`;
+
         const responses = await Promise.all([
-            fetch(SHEET_URLS.machines),
-            fetch(SHEET_URLS.fuel),
-            fetch(SHEET_URLS.maintenance)
+            fetch(getUrl(SHEET_URLS.machines), fetchOptions),
+            fetch(getUrl(SHEET_URLS.fuel), fetchOptions),
+            fetch(getUrl(SHEET_URLS.maintenance), fetchOptions)
         ]);
 
         // Check for HTTP Errors
@@ -79,13 +83,18 @@ async function loadData(onSuccess) {
 
         const [mText, fText, maText] = await Promise.all(responses.map(r => r.text()));
 
+        // เช็คว่าข้อมูลที่ได้มาไม่ใช่หน้า Login ของ Google (กรณีไม่ได้เปิด Public)
+        if (mText.includes("<!DOCTYPE html") || fText.includes("<!DOCTYPE html")) {
+            throw new Error("สิทธิ์การเข้าถึงถูกปฏิเสธ (กรุณาตรวจสอบการแชร์ Google Sheet เป็น 'Publish to web')");
+        }
+
         appData.machines = cleanCSV(Papa.parse(mText, { header: true, skipEmptyLines: true }).data);
         appData.fuel = cleanCSV(Papa.parse(fText, { header: true, skipEmptyLines: true }).data);
         appData.maintenance = cleanCSV(Papa.parse(maText, { header: true, skipEmptyLines: true }).data);
 
         // Validate Data
         if (!appData.machines.length || !appData.fuel.length) {
-            throw new Error("Data is empty or invalid CSV format");
+            throw new Error("ไม่พบข้อมูลในไฟล์ CSV (Empty Data)");
         }
 
         // Standardize Keys
@@ -113,7 +122,7 @@ async function loadData(onSuccess) {
     } catch (e) {
         console.error("Load Failed", e);
         sessionStorage.removeItem(CACHE_KEY); // Clear bad cache
-        alert(`เกิดข้อผิดพลาด: ${e.message}\nกรุณาตรวจสอบอินเทอร์เน็ต แล้วรีเฟรชใหม่`);
+        alert(`เกิดข้อผิดพลาด: ${e.message}\nกรุณาตรวจสอบอินเทอร์เน็ต หรือตั้งค่า Google Sheet เป็น 'Publish to web'`);
         // Hide loader even on error
         const loader = document.getElementById('loading');
         if(loader) loader.style.display = 'none';
