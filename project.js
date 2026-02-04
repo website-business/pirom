@@ -171,6 +171,17 @@ function renderPageProjectRankChart() {
 
         pageProjectRankInstance = new Chart(ctx, {
             type: 'bar', data: { labels: labels, datasets: [{ label: 'Top 10', data: data, backgroundColor: color, borderRadius: 6 }] },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: {size: 9} } }, y: { grid: { display: false }, ticks: { color: '#fff', font: { weight: 'bold' } } } }, onClick: (e, activeEls) => { if(activeEls.length > 0) { const index = activeEls[0].index; alert('สามารถดูรายละเอียดเครื่องจักรได้ที่หน้า Dashboard หลัก'); } }, onHover: (e, els) => e.native.target.style.cursor = els[0] ? 'pointer' : 'default' }
+            options: { 
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
+                scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: {size: 9} } }, y: { grid: { display: false }, ticks: { color: '#fff', font: { weight: 'bold' } } } }, 
+                onClick: (e, activeEls) => { 
+                    if(activeEls.length > 0) { 
+                        const index = activeEls[0].index; 
+                        // HERE IS THE FIX: Call showMachineDetails with current context
+                        showMachineDetails(labels[index], { view: pageProjectState.view, year: pageProjectState.year, month: pageProjectState.month }); 
+                    } 
+                }, 
+                onHover: (e, els) => e.native.target.style.cursor = els[0] ? 'pointer' : 'default' 
+            }
         });
 }
