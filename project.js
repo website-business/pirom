@@ -19,15 +19,7 @@ function initProjectPage() {
     pageProjectState.projectName = decodeURIComponent(projName);
     document.getElementById('project-page-title').innerText = pageProjectState.projectName;
 
-    // Calc stats
-    let totalFuel = 0, totalCost = 0;
-    appData.fuel.forEach(f => { if(f['โครงการ'] === pageProjectState.projectName) totalFuel += parseNumber(f['ปริมาณ(ลิตร)']); });
-    appData.maintenance.forEach(m => { if(m['โครงการ'] === pageProjectState.projectName) totalCost += parseNumber(m['ค่าซ่อมบำรุง']); });
-    
-    document.getElementById('project-total-fuel').innerText = formatNumber(totalFuel) + " L";
-    document.getElementById('project-total-cost').innerText = formatNumber(totalCost) + " ฿";
-
-    // Set Default Mode
+    // Set Default Mode and Initial Stats
     setProjectPageMode('fuel');
 
     // Hide Loader
@@ -57,6 +49,47 @@ function setProjectPageMode(mode) {
     
     updateProjectPageUI();
     updateProjectPageCharts();
+    updateProjectStats(); // Update stats on mode change
+}
+
+// --- New Function: Update Stats Cards based on current View ---
+function updateProjectStats() {
+    let totalFuel = 0, totalCost = 0;
+    
+    // Helper to check if date is in current view
+    const isDateInView = (dateStr) => {
+        const d = parseDate(dateStr);
+        if (!d) return false;
+        
+        if (pageProjectState.view === 'year') {
+            // Show all history for the project
+            return true; 
+        } else if (pageProjectState.view === 'month') {
+            // Show only selected year
+            return d.getFullYear() === pageProjectState.year;
+        } else if (pageProjectState.view === 'day') {
+            // Show only selected month/year
+            return d.getFullYear() === pageProjectState.year && d.getMonth() === pageProjectState.month;
+        }
+        return true;
+    };
+
+    // Filter and Sum Data
+    appData.fuel.forEach(f => { 
+        if(f['โครงการ'] === pageProjectState.projectName && isDateInView(f['วันที่'])) {
+            totalFuel += parseNumber(f['ปริมาณ(ลิตร)']); 
+        }
+    });
+    
+    appData.maintenance.forEach(m => { 
+        if(m['โครงการ'] === pageProjectState.projectName && isDateInView(m['วันที่'])) {
+            totalCost += parseNumber(m['ค่าซ่อมบำรุง']); 
+        }
+    });
+    
+    // Update UI
+    document.getElementById('project-total-fuel').innerText = formatNumber(totalFuel) + " L";
+    document.getElementById('project-total-cost').innerText = formatNumber(totalCost) + " ฿";
 }
 
 function updateProjectPageUI() {
@@ -85,6 +118,7 @@ function stepBackProjectCharts() {
     }
     updateProjectPageUI();
     updateProjectPageCharts();
+    updateProjectStats(); // Update stats on back
 }
 
 function updateProjectPageCharts() {
@@ -139,8 +173,24 @@ function renderPageProjectChart() {
             onClick: (e, activeEls) => {
                 if (activeEls.length > 0) {
                     const index = activeEls[0].index;
-                    if (pageProjectState.view === 'year') { pageProjectState.year = parseInt(labels[index]); pageProjectState.view = 'month'; updateProjectPageUI(); updateProjectPageCharts(); } 
-                    else if (pageProjectState.view === 'month') { pageProjectState.month = index; pageProjectState.view = 'day'; updateProjectPageUI(); updateProjectPageCharts(); }
+                    if (pageProjectState.view === 'year') { 
+                        pageProjectState.year = parseInt(labels[index]); 
+                        pageProjectState.view = 'month'; 
+                        updateProjectPageUI(); 
+                        updateProjectPageCharts(); 
+                        updateProjectStats();
+                    } 
+                    else if (pageProjectState.view === 'month') { 
+                        pageProjectState.month = index; 
+                        pageProjectState.view = 'day'; 
+                        updateProjectPageUI(); 
+                        updateProjectPageCharts(); 
+                        updateProjectStats();
+                    }
+                    else if (pageProjectState.view === 'day') {
+                        // FIX 1: Show daily breakdown on click
+                        showProjectDailyList(index);
+                    }
                 }
             },
             onHover: (e, els) => e.native.target.style.cursor = els[0] ? 'pointer' : 'default'
@@ -177,11 +227,113 @@ function renderPageProjectRankChart() {
                 onClick: (e, activeEls) => { 
                     if(activeEls.length > 0) { 
                         const index = activeEls[0].index; 
-                        // HERE IS THE FIX: Call showMachineDetails with current context
-                        showMachineDetails(labels[index], { view: pageProjectState.view, year: pageProjectState.year, month: pageProjectState.month }); 
+                        // FIX 2: Ensure correct context for showMachineDetails
+                        if (typeof showMachineDetails === 'function') {
+                            showMachineDetails(labels[index], { 
+                                view: pageProjectState.view, 
+                                year: pageProjectState.year, 
+                                month: pageProjectState.month 
+                            });
+                        } else {
+                            console.error("showMachineDetails function not found. Make sure common.js is loaded.");
+                        }
                     } 
                 }, 
                 onHover: (e, els) => e.native.target.style.cursor = els[0] ? 'pointer' : 'default' 
             }
         });
+}
+
+// --- Function to Show Daily Drill-down (Timeline Click) ---
+function showProjectDailyList(dayIndex) {
+    const day = dayIndex + 1;
+    const year = pageProjectState.year;
+    const month = pageProjectState.month;
+    const project = pageProjectState.projectName;
+    const mode = pageProjectState.graphMode; 
+    
+    let dataSource = mode === 'fuel' ? appData.fuel : appData.maintenance;
+    let valKey = mode === 'fuel' ? 'ปริมาณ(ลิตร)' : 'ค่าซ่อมบำรุง';
+    let unit = mode === 'fuel' ? 'L' : '฿';
+    let chartColor = mode === 'fuel' ? getCssVar('--crystal-emerald') : getCssVar('--crystal-purple');
+
+    // Filter data for that specific day and project
+    const dailyItems = dataSource.filter(item => {
+        const d = parseDate(item['วันที่']);
+        if (!d) return false;
+        let match = d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+        if (project) match = match && item['โครงการ'] === project;
+        return match;
+    });
+    
+    const dateStr = `${day}/${month+1}/${year}`;
+    document.getElementById('sub-modal-title').innerText = `รายละเอียดวันที่ ${dateStr}`;
+    const container = document.getElementById('sub-modal-body');
+    
+    // Note: subModalChartInstance is defined globally in common.js but can be accessed/reset here
+    // We check window.subModalChartInstance if declared there, or just assume global scope access
+    if (typeof subModalChartInstance !== 'undefined' && subModalChartInstance) { 
+        subModalChartInstance.destroy(); 
+        subModalChartInstance = null; 
+    } else if (window.subModalChartInstance) {
+        window.subModalChartInstance.destroy();
+        window.subModalChartInstance = null;
+    }
+
+    if (dailyItems.length === 0) {
+        container.innerHTML = `<div class="text-center text-[var(--text-muted)] py-10">ไม่มีข้อมูลในวันนี้</div>`;
+    } else {
+        const grouped = {};
+        dailyItems.forEach(item => {
+            const val = parseFloat(item[valKey]) || 0;
+            const machine = item['รหัสรถ'] || 'ไม่ระบุ';
+            grouped[machine] = (grouped[machine] || 0) + val;
+        });
+        const sorted = Object.entries(grouped).sort(([,a], [,b]) => b - a);
+        const labels = sorted.map(k => k[0]);
+        const data = sorted.map(k => k[1]);
+        const dynamicHeight = Math.max(300, labels.length * 40);
+        container.innerHTML = `<div style="position: relative; height: ${dynamicHeight}px; width: 100%;"><canvas id="subModalChart"></canvas></div>`;
+        
+        const ctx = document.getElementById('subModalChart').getContext('2d');
+        const newChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: unit,
+                    data: data,
+                    backgroundColor: chartColor,
+                    borderRadius: 6,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                    y: { grid: { display: false }, ticks: { color: '#fff', font: { weight: 'bold' } } }
+                },
+                onClick: (e, activeEls) => {
+                    if (activeEls.length > 0) {
+                        const index = activeEls[0].index;
+                        const machineCode = labels[index];
+                        // Use function from common.js
+                        if(typeof closeSubModal === 'function') closeSubModal();
+                        if(typeof showMachineDetails === 'function') {
+                            showMachineDetails(machineCode, { view: 'day', year: year, month: month });
+                        }
+                    }
+                },
+                onHover: (e, els) => e.native.target.style.cursor = els[0] ? 'pointer' : 'default'
+            }
+        });
+        // Assign to global if possible to track destruction
+        window.subModalChartInstance = newChart;
+    }
+    
+    document.getElementById('sub-modal').classList.add('show');
 }
