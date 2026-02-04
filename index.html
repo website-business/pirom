@@ -82,8 +82,8 @@
                 </div>
                 <div class="absolute bottom-0 left-0 w-full h-1 bg-[var(--crystal-purple)] opacity-50"></div>
             </div>
-            <!-- Project Card -->
-            <div id="card-project" class="glass-card card-stat p-6 cursor-pointer" onclick="openModal('project')">
+            <!-- Project Card (Static Stat Only) -->
+            <div id="card-project" class="glass-card card-stat p-6">
                 <div class="flex justify-between items-start h-full">
                     <div class="overflow-hidden"><div class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Projects</div><div class="text-4xl stat-value text-white" id="total-projects">-</div></div>
                     <div class="text-[var(--crystal-amber)] text-2xl opacity-80"><i class="fas fa-building"></i></div>
@@ -92,20 +92,32 @@
             </div>
         </div>
 
-        <!-- Dashboard Charts -->
+        <!-- Dashboard Charts & Filters -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="glass-card p-8 rounded-3xl flex flex-col lg:col-span-2">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end mb-8 gap-4">
                     <div>
                         <div class="text-[var(--crystal-cyan)] font-bold text-xs tracking-widest mb-2 uppercase">Timeline Analysis</div>
                         <h2 class="text-3xl font-bold text-white flex items-center gap-3"><span id="chart-title">สถิติน้ำมันเชื้อเพลิง</span></h2>
-                        <div id="chart-breadcrumb" class="text-sm text-gray-400 mt-2 flex items-center gap-2 font-medium"><div class="glow-dot text-emerald"></div>ระบบพร้อมทำงาน</div>
+                        <div id="chart-breadcrumb" class="text-sm text-gray-400 mt-2 flex items-center gap-2 font-medium"><div class="glow-dot text-emerald"></div><span id="chart-status-text">ภาพรวมทุกโครงการ</span></div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                         <button id="chart-home-btn" class="hidden btn-crystal px-4 py-2 text-xs" title="หน้าแรก"><i class="fas fa-home"></i></button>
                         <button id="chart-back-btn" class="hidden btn-crystal px-4 py-2 text-xs" title="ย้อนกลับ"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button>
-                        <div class="relative group w-full sm:w-auto">
-                            <select id="machine-select" class="appearance-none bg-white/5 border border-white/10 text-white py-2.5 px-5 pr-10 rounded-xl text-sm focus:outline-none focus:border-[var(--crystal-cyan)] w-full sm:w-60 cursor-pointer hover:bg-white/10 transition font-medium"><option value="ALL">เครื่องจักรทั้งหมด</option></select>
+                        
+                        <!-- Project Filter -->
+                        <div class="relative group w-full sm:w-48">
+                            <select id="project-select" class="appearance-none bg-white/5 border border-white/10 text-white py-2.5 px-5 pr-10 rounded-xl text-sm focus:outline-none focus:border-[var(--crystal-amber)] w-full cursor-pointer hover:bg-white/10 transition font-medium text-[var(--crystal-amber)]">
+                                <option value="ALL">ทุกโครงการ</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400"><i class="fas fa-chevron-down text-xs"></i></div>
+                        </div>
+
+                        <!-- Machine Filter -->
+                        <div class="relative group w-full sm:w-48">
+                            <select id="machine-select" class="appearance-none bg-white/5 border border-white/10 text-white py-2.5 px-5 pr-10 rounded-xl text-sm focus:outline-none focus:border-[var(--crystal-cyan)] w-full cursor-pointer hover:bg-white/10 transition font-medium">
+                                <option value="ALL">เครื่องจักรทั้งหมด</option>
+                            </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400"><i class="fas fa-chevron-down text-xs"></i></div>
                         </div>
                     </div>
@@ -124,9 +136,39 @@
                 <div class="relative flex-grow w-full min-h-[420px]"><canvas id="rankChart"></canvas></div>
             </div>
         </div>
+
+        <!-- NEW: Data List Section (Shows when Project is selected) -->
+        <div id="data-list-section" class="hidden mt-8 animate-fade-in">
+            <div class="glass-card p-8 rounded-3xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <div class="text-[var(--crystal-rose)] font-bold text-xs tracking-widest mb-1 uppercase">Detailed Records</div>
+                        <h3 class="text-2xl font-bold text-white" id="data-list-title">รายการบันทึก</h3>
+                    </div>
+                    <div class="text-sm text-gray-400" id="data-list-subtitle">...</div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-400">
+                        <thead class="text-xs text-[var(--crystal-cyan)] uppercase bg-white/5 border-b border-white/10">
+                            <tr>
+                                <th class="px-6 py-4 rounded-tl-xl">วันที่</th>
+                                <th class="px-6 py-4">รหัสเครื่องจักร</th>
+                                <th class="px-6 py-4 text-right">จำนวน</th>
+                                <th class="px-6 py-4 rounded-tr-xl">รายละเอียด</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-list-body" class="divide-y divide-white/5">
+                            <!-- Data rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="data-list-empty" class="hidden text-center py-10 text-gray-500">ไม่พบข้อมูลในช่วงเวลานี้</div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Modals -->
+    <!-- Modals (Keep existing structure) -->
     <div id="modal" class="modal-overlay">
         <div class="modal-content">
             <div class="bg-white/5 border-b border-white/5 px-6 py-4 flex justify-between items-center backdrop-blur-md">
@@ -150,7 +192,6 @@
         </div>
     </div>
     
-    <!-- Sub Modals & QR -->
     <div id="qr-modal" class="modal-overlay"><div class="modal-content" style="max-width: 400px;"><div class="bg-white/5 px-6 py-4 flex justify-between items-center border-b border-white/5"><h3 class="text-lg font-bold text-[var(--crystal-emerald)] flex items-center gap-2"><i class="fas fa-qrcode"></i> SCAN QR</h3><button onclick="closeQRModal()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times"></i></button></div><div class="p-6 bg-black/40 flex justify-center relative overflow-hidden rounded-b-lg"><div id="qr-reader" style="width: 100%; border-radius: 12px; overflow: hidden;"></div></div></div></div>
     <div id="sub-modal" class="modal-overlay" style="z-index: 200;"><div class="modal-content" style="max-width: 500px;"><div class="bg-white/5 px-6 py-4 flex justify-between items-center border-b border-white/5"><h3 class="text-lg font-bold flex items-center gap-2 text-white"><span class="w-1.5 h-6 bg-[var(--crystal-rose)] rounded-full"></span><span id="sub-modal-title">Daily Log</span></h3><button onclick="closeSubModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition text-white"><i class="fas fa-times"></i></button></div><div class="p-6 overflow-y-auto" style="min-height: 200px;" id="sub-modal-body"></div></div></div>
 

@@ -10,20 +10,41 @@ function initDashboard() {
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('th-TH');
     document.getElementById('total-machines').innerText = appData.machines.length;
     
-    const selector = document.getElementById('machine-select');
-    const codes = [...new Set(appData.machines.map(m => m['รหัส']).filter(c => c))].sort();
-    codes.forEach(code => { const opt = document.createElement('option'); opt.value = code; opt.innerText = code; selector.appendChild(opt); });
+    // Populate Machine Select
+    const machSelector = document.getElementById('machine-select');
+    const machCodes = [...new Set(appData.machines.map(m => m['รหัส']).filter(c => c))].sort();
+    machCodes.forEach(code => { const opt = document.createElement('option'); opt.value = code; opt.innerText = code; machSelector.appendChild(opt); });
 
+    // Populate Project Select (NEW)
+    const projSelector = document.getElementById('project-select');
+    const projects = new Set();
+    appData.fuel.forEach(i => { if(i['โครงการ']) projects.add(i['โครงการ']); });
+    appData.maintenance.forEach(i => { if(i['โครงการ']) projects.add(i['โครงการ']); });
+    [...projects].sort().forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.innerText = p; projSelector.appendChild(opt); });
+
+    // Events
     document.getElementById('chart-back-btn').addEventListener('click', goBackLevel); 
     document.getElementById('chart-home-btn').addEventListener('click', () => { 
         chartState.selectedMachine = 'ALL'; 
-        chartState.selectedProject = 'ALL'; 
+        // Keep project as is or reset? Usually home resets view but keeps context. Let's keep project context if user selected one.
         document.getElementById('machine-select').value = 'ALL'; 
         resetChartToYear(); 
     }); 
+    
     document.getElementById('machine-select').addEventListener('change', (e) => { 
         chartState.selectedMachine = e.target.value; 
         resetChartToYear(); 
+    });
+
+    // Project Select Event (NEW)
+    document.getElementById('project-select').addEventListener('change', (e) => {
+        chartState.selectedProject = e.target.value;
+        
+        // Change text color to indicate filter active
+        if(chartState.selectedProject !== 'ALL') e.target.classList.add('text-[var(--crystal-amber)]');
+        else e.target.classList.remove('text-[var(--crystal-amber)]');
+        
+        resetChartToYear();
     });
 
     processAlerts();
@@ -77,6 +98,16 @@ function updateAllStats() {
     }
     document.getElementById('label-total-fuel').innerText = `Fuel Usage ${timeLabel}`;
     document.getElementById('label-total-maint').innerText = `Maintenance ${timeLabel}`;
+
+    // Update Status Text
+    const statusText = document.getElementById('chart-status-text');
+    let statusMsg = selectedProj === 'ALL' ? 'ภาพรวมทุกโครงการ' : `โครงการ: ${selectedProj}`;
+    if (chartState.view === 'month') statusMsg += ` (ปี ${chartState.selectedYear})`;
+    else if (chartState.view === 'day' || chartState.view === 'single_day') statusMsg += ` (${timeLabel})`;
+    statusText.innerText = statusMsg;
+
+    // Trigger Data List Update
+    renderDataList();
 }
 
 function processAlerts() {
@@ -102,60 +133,10 @@ function processAlerts() {
         if (entry.expiredIssues.length > 0) appData.alerts.expired.push(entry);
         if (entry.warningIssues.length > 0) appData.alerts.warning.push(entry);
     });
-    
     document.getElementById('val-expired').innerText = appData.alerts.expired.length;
     document.getElementById('val-warning').innerText = appData.alerts.warning.length;
 }
 
-// Alert Tab Switching (Specific to dashboard modal content)
-function switchAlertTab(t) { 
-    const container = document.getElementById('alert-list-container');
-    const list = t==='expired' ? appData.alerts.expired : appData.alerts.warning;
-    if(list.length === 0) { container.innerHTML = `<div class="text-center text-gray-500 py-6">ไม่พบรายการ</div>`; return; }
-    container.innerHTML = list.map(item => `
-        <div onclick="showMachineDetails('${item.info['รหัส']}')" class="bg-white/5 border-l-4 ${t==='expired'?'border-red-500':'border-yellow-500'} p-3 mb-2 rounded-xl shadow-lg cursor-pointer hover:bg-white/10 transition backdrop-blur-sm">
-            <div class="flex justify-between"><span class="font-bold text-white">${item.info['รหัส']}</span><span class="text-xs text-gray-400">${item.info['ทะเบียน']}</span></div>
-            ${t==='expired' ? item.expiredIssues.map(i=>`<div class="text-xs text-red-400 mt-1">• ${i}</div>`).join('') : item.warningIssues.map(i=>`<div class="text-xs text-yellow-400 mt-1">• ${i}</div>`).join('')}
-        </div>
-    `).join('');
-}
-
-// Open Modal Override for Dashboard specific content (Alerts, Projects)
-const _originalOpenModal = window.openModal; 
-window.openModal = function(type) {
-    _originalOpenModal(type); // Call common one first
-    
-    const body = document.getElementById('modal-body');
-    
-    if (type === 'alerts') {
-        body.innerHTML = `
-            <div class="flex gap-2 mb-4 border-b border-white/10 pb-2">
-                <button id="tab-expired" onclick="switchAlertTab('expired')" class="flex-1 py-2 text-sm border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition rounded-xl">หมดอายุ (${appData.alerts.expired.length})</button>
-                <button id="tab-warning" onclick="switchAlertTab('warning')" class="flex-1 py-2 text-sm border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black transition rounded-xl">ใกล้หมด (${appData.alerts.warning.length})</button>
-            </div>
-            <div id="alert-list-container"></div>
-        `;
-        setTimeout(() => switchAlertTab('expired'), 0);
-    } else if (type === 'project') {
-        const projStats = {};
-        const addStat = (p, f, c) => { if(!p) p='N/A'; if(!projStats[p]) projStats[p]={fuel:0,cost:0,name:p}; projStats[p].fuel+=f; projStats[p].cost+=c; };
-        appData.fuel.forEach(f=>addStat(f['โครงการ'],parseNumber(f['ปริมาณ(ลิตร)']),0));
-        appData.maintenance.forEach(m=>addStat(m['โครงการ'],0,parseNumber(m['ค่าซ่อมบำรุง'])));
-        const projects = Object.values(projStats).sort((a,b)=>b.cost-a.cost);
-        body.innerHTML = projects.map(p => `
-            <div onclick="window.location.href='project.html?name=${encodeURIComponent(p.name)}'" class="border border-white/10 bg-white/5 p-4 mb-3 hover:border-[var(--crystal-cyan)] hover:bg-white/10 transition rounded-xl cursor-pointer group backdrop-blur-sm">
-                <div class="flex justify-between text-lg font-semibold text-white"><span>${p.name}</span><i class="fas fa-chevron-right opacity-0 group-hover:opacity-100 transition"></i></div>
-                <div class="flex justify-between text-sm mt-2 text-gray-400">
-                    <span><i class="fas fa-gas-pump mr-2 text-[var(--crystal-emerald)]"></i> ${formatNumber(p.fuel)}</span>
-                    <span><i class="fas fa-wrench mr-2 text-[var(--crystal-purple)]"></i> ${formatNumber(p.cost)}</span>
-                </div>
-            </div>
-        `).join('');
-    }
-}
-
-// ... Rest of Chart Logic (Trend & Rank) similar to before but without Modal logic ...
-let currentGraphMode = 'fuel'; 
 function updateChart() { renderTrendChart(); renderRankChart(); }
 function switchGraphMode(mode) { 
     currentGraphMode = mode; 
@@ -169,7 +150,6 @@ function switchGraphMode(mode) {
         document.getElementById('chart-title').innerText = 'ค่าซ่อมบำรุงรายเดือน'; 
     } 
     resetChartToYear(); 
-    updateAllStats();
 }
 function resetChartToYear() { 
     chartState.view = 'year'; chartState.selectedYear = null; chartState.selectedMonth = null; chartState.selectedDay = null; 
@@ -182,6 +162,77 @@ function goBackLevel() {
     updateChart(); updateAllStats(); 
 }
 
+// --- RENDER DATA LIST (NEW FEATURE) ---
+function renderDataList() {
+    const container = document.getElementById('data-list-section');
+    
+    // Hide if no project is selected OR if viewing All Projects
+    if (chartState.selectedProject === 'ALL') {
+        container.classList.add('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    
+    // Determine data source
+    const dataSource = currentGraphMode === 'fuel' ? appData.fuel : appData.maintenance;
+    const valKey = currentGraphMode === 'fuel' ? 'ปริมาณ(ลิตร)' : 'ค่าซ่อมบำรุง';
+    const unit = currentGraphMode === 'fuel' ? 'ลิตร' : 'บาท';
+    const titleText = currentGraphMode === 'fuel' ? 'รายการเติมน้ำมัน' : 'รายการซ่อมบำรุง';
+    
+    document.getElementById('data-list-title').innerText = titleText;
+    document.getElementById('data-list-subtitle').innerText = `โครงการ: ${chartState.selectedProject}`;
+
+    // Filter items based on current chart view (Year/Month/Day)
+    const filteredItems = dataSource.filter(item => {
+        if (item['โครงการ'] !== chartState.selectedProject) return false;
+        
+        const d = parseDate(item['วันที่']);
+        if (!d) return false;
+        
+        if (chartState.view === 'month') {
+            return d.getFullYear() === chartState.selectedYear;
+        } else if (chartState.view === 'day' || chartState.view === 'single_day') {
+            return d.getFullYear() === chartState.selectedYear && d.getMonth() === chartState.selectedMonth;
+        }
+        return true; // Show all for 'year' view
+    });
+
+    // Sort by date (newest first)
+    filteredItems.sort((a, b) => {
+        const da = parseDate(a['วันที่']);
+        const db = parseDate(b['วันที่']);
+        return db - da; 
+    });
+
+    const tbody = document.getElementById('data-list-body');
+    const emptyMsg = document.getElementById('data-list-empty');
+    tbody.innerHTML = '';
+
+    if (filteredItems.length === 0) {
+        emptyMsg.classList.remove('hidden');
+    } else {
+        emptyMsg.classList.add('hidden');
+        // Limit to 100 items to prevent lag
+        filteredItems.slice(0, 100).forEach(item => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-white/5 transition';
+            
+            const val = formatNumber(parseNumber(item[valKey]));
+            const detail = currentGraphMode === 'maintenance' ? (item['รายการซ่อม'] || '-') : (item['หมายเหตุ'] || '-');
+            
+            tr.innerHTML = `
+                <td class="px-6 py-4 font-medium text-white">${item['วันที่']}</td>
+                <td class="px-6 py-4 text-[var(--crystal-cyan)] cursor-pointer hover:underline" onclick="showMachineDetails('${item['รหัสรถ']}')">${item['รหัสรถ']}</td>
+                <td class="px-6 py-4 text-right font-bold text-[var(--crystal-emerald)]">${val} ${unit}</td>
+                <td class="px-6 py-4 truncate max-w-xs" title="${detail}">${detail}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+// --- Chart Rendering ---
 function renderTrendChart() {
     const ctx = document.getElementById('trendChart').getContext('2d');
     if (chartState.trendInstance) chartState.trendInstance.destroy();
@@ -212,13 +263,21 @@ function renderTrendChart() {
     }
 
     if (chartState.view === 'year') {
+        document.getElementById('chart-breadcrumb').innerText = "ภาพรวมรายปี";
+        document.getElementById('chart-back-btn').classList.add('hidden');
+        document.getElementById('chart-home-btn').classList.add('hidden');
         const d = filterAndSumTrend((date) => date.getFullYear());
         labels = Object.keys(d).sort(); data = labels.map(k => d[k]);
     } else if (chartState.view === 'month') {
+        document.getElementById('chart-breadcrumb').innerText = `ปี: ${chartState.selectedYear}`;
+        document.getElementById('chart-back-btn').classList.remove('hidden');
+        document.getElementById('chart-home-btn').classList.remove('hidden');
         const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         const d = filterAndSumTrend((date) => date.getMonth());
         labels = months; data = new Array(12).fill(0).map((_, i) => d[i] || 0);
     } else if (chartState.view === 'day' || chartState.view === 'single_day') {
+        const mName = new Date(chartState.selectedYear, chartState.selectedMonth).toLocaleString('th-TH', { month: 'long' });
+        document.getElementById('chart-breadcrumb').innerText = `${mName} ${chartState.selectedYear}`;
         const days = new Date(chartState.selectedYear, chartState.selectedMonth + 1, 0).getDate();
         const d = filterAndSumTrend((date) => date.getDate());
         labels = Array.from({length: days}, (_, i) => i + 1); data = labels.map(k => d[k] || 0);
@@ -242,7 +301,7 @@ function renderTrendChart() {
 function handleTrendClick(index, labels) {
     if (chartState.view === 'year') { chartState.selectedYear = parseInt(labels[index]); chartState.view = 'month'; updateChart(); updateAllStats(); }
     else if (chartState.view === 'month') { chartState.selectedMonth = index; chartState.view = 'day'; updateChart(); updateAllStats(); }
-    else if (chartState.view === 'day' || chartState.view === 'single_day') { showMainDailyDetail(index + 1); }
+    // Removed logic to open sub-modal for daily view since we have Data List now
 }
 
 function renderRankChart() {
@@ -276,7 +335,38 @@ function renderRankChart() {
     });
 }
 
-// Sub modal and QR functions (Dashboard specific triggers)
+// Alert Tab Switching (For modal)
+function switchAlertTab(t) { 
+    const container = document.getElementById('alert-list-container');
+    const list = t==='expired' ? appData.alerts.expired : appData.alerts.warning;
+    if(list.length === 0) { container.innerHTML = `<div class="text-center text-gray-500 py-6">ไม่พบรายการ</div>`; return; }
+    container.innerHTML = list.map(item => `
+        <div onclick="showMachineDetails('${item.info['รหัส']}')" class="bg-white/5 border-l-4 ${t==='expired'?'border-red-500':'border-yellow-500'} p-3 mb-2 rounded-xl shadow-lg cursor-pointer hover:bg-white/10 transition backdrop-blur-sm">
+            <div class="flex justify-between"><span class="font-bold text-white">${item.info['รหัส']}</span><span class="text-xs text-gray-400">${item.info['ทะเบียน']}</span></div>
+            ${t==='expired' ? item.expiredIssues.map(i=>`<div class="text-xs text-red-400 mt-1">• ${i}</div>`).join('') : item.warningIssues.map(i=>`<div class="text-xs text-yellow-400 mt-1">• ${i}</div>`).join('')}
+        </div>
+    `).join('');
+}
+
+// Override Open Modal to hide Project option (since it is now a filter)
+const _originalOpenModal = window.openModal; 
+window.openModal = function(type) {
+    if(type === 'project') return; // Disable project modal
+    _originalOpenModal(type);
+    const body = document.getElementById('modal-body');
+    if (type === 'alerts') {
+        body.innerHTML = `
+            <div class="flex gap-2 mb-4 border-b border-white/10 pb-2">
+                <button id="tab-expired" onclick="switchAlertTab('expired')" class="flex-1 py-2 text-sm border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition rounded-xl">หมดอายุ (${appData.alerts.expired.length})</button>
+                <button id="tab-warning" onclick="switchAlertTab('warning')" class="flex-1 py-2 text-sm border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black transition rounded-xl">ใกล้หมด (${appData.alerts.warning.length})</button>
+            </div>
+            <div id="alert-list-container"></div>
+        `;
+        setTimeout(() => switchAlertTab('expired'), 0);
+    }
+}
+
+// Sub modal and QR functions
 function openQRScanner() {
     document.getElementById('qr-modal').classList.add('show');
     if(!html5QrCode) html5QrCode = new Html5Qrcode("qr-reader");
