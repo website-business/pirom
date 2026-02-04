@@ -1,0 +1,119 @@
+/* --- CRYSTAL GLASS THEME VARIABLES --- */
+:root {
+    --bg-deep: #030712;
+    --text-main: #f0f9ff;
+    --text-muted: #94a3b8;
+    --crystal-cyan: #22d3ee;
+    --crystal-purple: #c084fc;
+    --crystal-rose: #fb7185;
+    --crystal-emerald: #34d399;
+    --crystal-amber: #fbbf24;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    --glass-blur: 20px;
+    --chart-grid: rgba(255, 255, 255, 0.05);
+}
+
+body {
+    font-family: 'Bai Jamjuree', sans-serif;
+    background-color: var(--bg-deep);
+    background-image: 
+        radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.15), transparent 50%),
+        radial-gradient(circle at 100% 0%, rgba(192, 132, 252, 0.15), transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(251, 113, 133, 0.15), transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(52, 211, 153, 0.15), transparent 50%);
+    background-attachment: fixed;
+    background-size: cover;
+    color: var(--text-main);
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* --- UI Elements --- */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-top: 1px solid var(--glass-highlight);
+    border-radius: 24px;
+    box-shadow: var(--glass-shadow);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-stat { height: 100%; min-height: 130px; }
+
+.glass-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.btn-crystal {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-radius: 12px;
+    transition: all 0.3s;
+    font-family: 'Bai Jamjuree', sans-serif;
+    font-weight: 500;
+    backdrop-filter: blur(5px);
+    cursor: pointer;
+}
+.btn-crystal:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+/* --- View Transition --- */
+.view-section {
+    transition: opacity 0.3s ease-in-out;
+}
+.hidden { display: none !important; opacity: 0; }
+
+/* --- Modal --- */
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: none; justify-content: center; align-items: center; z-index: 100;
+    opacity: 0; transition: opacity 0.3s;
+}
+.modal-overlay.show { display: flex; opacity: 1; }
+.modal-content {
+    background: rgba(20, 20, 30, 0.8);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    width: 95%; max-width: 900px; max-height: 90vh;
+    display: flex; flex-direction: column;
+    transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+.modal-overlay.show .modal-content { transform: scale(1); }
+
+/* --- Loading --- */
+.loading-overlay { position: fixed; inset: 0; background: #030712; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.orb-loader { width: 60px; height: 60px; background: radial-gradient(circle, var(--crystal-cyan), var(--crystal-purple)); border-radius: 50%; filter: blur(10px); animation: pulse-orb 1.5s infinite ease-in-out alternate; }
+@keyframes pulse-orb { 0% { transform: scale(0.8); opacity: 0.7; } 100% { transform: scale(1.2); opacity: 1; } }
+
+/* Helpers */
+.text-gradient { background: linear-gradient(to right, var(--crystal-cyan), var(--crystal-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.stat-value { font-family: 'Outfit', sans-serif; font-weight: 700; }
+.glow-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+.text-cyan { color: var(--crystal-cyan); }
+.text-rose { color: var(--crystal-rose); }
+.text-emerald { color: var(--crystal-emerald); }
+
+/* Animation */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
