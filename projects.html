@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โครงการ - EMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        const URL_MAIN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLxlqlfXntTk-z4x45kGjZ1OjHFnpCeaqjGZGpkfohr3difiJQsI-p-3iZwgyM7UO35kRztltMKgbd/pub?gid=0&single=true&output=csv";
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { gray: { 850: '#1f2937', 900: '#111827' } } } } }
+    </script>
+    <style>body { background-color: #030712; color: #e5e7eb; } .glass-panel { background: rgba(30, 30, 45, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }</style>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col hidden md:flex">
+        <div class="p-6 border-b border-gray-800"><h1 class="text-xl font-bold text-white"><i class="fas fa-cubes text-blue-500 mr-2"></i>EMS System</h1></div>
+        <nav class="flex-1 py-4 space-y-1">
+            <a href="machines.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-truck-moving w-6"></i> ข้อมูลเครื่องจักร</a>
+            <a href="tax.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-file-invoice-dollar w-6"></i> แจ้งเตือนภาษี</a>
+            <a href="projects.html" class="flex items-center px-6 py-3 bg-blue-900/20 text-blue-400 border-r-2 border-blue-500"><i class="fas fa-building w-6"></i> โครงการ</a>
+            <div class="px-6 mt-6 mb-2 text-xs text-gray-500 font-bold uppercase">Analytics</div>
+            <a href="fuel.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-gas-pump w-6"></i> สรุปน้ำมัน</a>
+            <a href="maintenance.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"><i class="fas fa-tools w-6"></i> สรุปซ่อมบำรุง</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="h-16 bg-gray-900/50 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
+            <h2 class="text-lg font-medium text-white">แยกตามโครงการ / ไซต์งาน</h2>
+        </header>
+
+        <div class="p-6 overflow-y-auto h-full pb-20">
+            <div id="projectContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Papa.parse(URL_MAIN, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: (results) => renderProjects(results.data)
+            });
+        });
+
+        function renderProjects(data) {
+            const container = document.getElementById('projectContainer');
+            const groups = {};
+            
+            // หา Column ที่เป็น Site
+            const siteCol = ['site', 'project', 'location', 'หน่วยงาน', 'โครงการ', 'สถานที่'].find(k => Object.keys(data[0] || {}).some(key => key.toLowerCase().includes(k)));
+
+            if (!siteCol) {
+                container.innerHTML = `<div class="col-span-full text-center text-gray-500">ไม่พบคอลัมน์ระบุโครงการ (เช่น Site, Project)</div>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const key = Object.keys(item).find(k => k.toLowerCase().includes(siteCol));
+                const siteName = item[key] || 'ไม่ระบุ';
+                if (!groups[siteName]) groups[siteName] = [];
+                groups[siteName].push(item);
+            });
+
+            container.innerHTML = Object.entries(groups).map(([site, items]) => `
+                <div class="glass-panel rounded-xl overflow-hidden flex flex-col">
+                    <div class="p-4 bg-gray-800/50 border-b border-gray-700 flex justify-between items-center">
+                        <h3 class="font-bold text-white"><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i> ${site}</h3>
+                        <span class="bg-blue-900 text-blue-300 text-xs px-2 py-1 rounded-full">${items.length} คัน</span>
+                    </div>
+                    <div class="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                        ${items.map(m => {
+                            const plate = m['ทะเบียน'] || m['plate'] || m['Plate'] || 'No Plate';
+                            return `<div class="text-sm text-gray-400 border-b border-gray-800 pb-1 last:border-0"><i class="fas fa-truck text-xs mr-2"></i> ${plate}</div>`
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
