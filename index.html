@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ข้อมูลเครื่องจักร</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body>
+
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h2>📋 ทะเบียนเครื่องจักรและวันต่ออายุ</h2>
+        <div id="data-display" class="loading">กำลังโหลดข้อมูล...</div>
+    </div>
+
+    <script src="menu.js"></script>
+    <script>
+        // --- ส่วนการตั้งค่าเฉพาะหน้านี้ ---
+        // ลิงค์ Google Sheet (Published CSV) ของหน้านี้
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLxlqlfXntTk-z4x45kGjZ1OjHFnpCeaqjGZGpkfohr3difiJQsI-p-3iZwgyM7UO35kRztltMKgbd/pub?gid=0&single=true&output=csv';
+
+        Papa.parse(SHEET_URL, {
+            download: true,
+            header: true,
+            complete: function(results) {
+                const data = results.data;
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>รหัสรถ</th>
+                                <th>ทะเบียน</th>
+                                <th>ยี่ห้อ</th>
+                                <th>ประเภท</th>
+                                <th>ทะเบียนขาด</th>
+                                <th>ประกันขาด</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.forEach(row => {
+                    // กรองแถวว่างออก
+                    if(row['รหัส']) { 
+                        tableHTML += `
+                            <tr>
+                                <td>${row['รหัส'] || '-'}</td>
+                                <td>${row['ทะเบียน'] || '-'}</td>
+                                <td>${row['ยี่ห้อรถ'] || '-'}</td>
+                                <td>${row['ประเภทรถ'] || '-'}</td>
+                                <td>${row['วันที่ทะเบียนขาด'] || '-'}</td>
+                                <td>${row['วันที่ประกัน+พรบ.ขาด'] || '-'}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                tableHTML += `</tbody></table>`;
+                document.getElementById('data-display').innerHTML = tableHTML;
+                document.getElementById('data-display').classList.remove('loading');
+            },
+            error: function(err) {
+                document.getElementById('data-display').innerText = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+            }
+        });
+    </script>
+</body>
+</html>
