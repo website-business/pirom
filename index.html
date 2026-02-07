@@ -3,23 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ข้อมูลเครื่องจักร</title>
+    <title>Dashboard เครื่องจักร</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body>
-
-    <div id="navbar-container"></div>
-
     <div class="container">
-        <h2>📋 ทะเบียนเครื่องจักรและวันต่ออายุ</h2>
-        <div id="data-display" class="loading">กำลังโหลดข้อมูล...</div>
+        <h2>ระบบจัดการเครื่องจักรและยานพาหนะ</h2>
+        
+        <div class="dashboard-grid">
+            <a href="info.html" class="card-menu c-blue">
+                <i class="fas fa-truck-monster card-icon"></i>
+                <div class="card-title">ข้อมูลเครื่องจักร</div>
+                <div class="card-desc">ดูรายการรถและวันหมดอายุ</div>
+            </a>
+
+            <a href="fuel.html" class="card-menu c-orange">
+                <i class="fas fa-gas-pump card-icon"></i>
+                <div class="card-title">บันทึกน้ำมัน</div>
+                <div class="card-desc">ตรวจสอบประวัติการเติมน้ำมัน</div>
+            </a>
+
+            <a href="repair.html" class="card-menu c-green">
+                <i class="fas fa-tools card-icon"></i>
+                <div class="card-title">บันทึกค่าซ่อม</div>
+                <div class="card-desc">ประวัติการซ่อมบำรุง</div>
+            </a>
+
+            <a href="info.html" class="card-menu c-red">
+                <div class="alert-badge" id="alert-badge">!</div>
+                <i class="fas fa-calendar-alt card-icon"></i>
+                <div class="card-title">แจ้งเตือนภาษี/พรบ.</div>
+                <div class="card-desc" id="alert-text" style="line-height: 1.6;">กำลังตรวจสอบ...</div>
+            </a>
+        </div>
     </div>
 
     <script src="menu.js"></script>
     <script>
-        // --- ส่วนการตั้งค่าเฉพาะหน้านี้ ---
-        // ลิงค์ Google Sheet (Published CSV) ของหน้านี้
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLxlqlfXntTk-z4x45kGjZ1OjHFnpCeaqjGZGpkfohr3difiJQsI-p-3iZwgyM7UO35kRztltMKgbd/pub?gid=0&single=true&output=csv';
 
         Papa.parse(SHEET_URL, {
@@ -27,43 +49,45 @@
             header: true,
             complete: function(results) {
                 const data = results.data;
-                let tableHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>รหัสรถ</th>
-                                <th>ทะเบียน</th>
-                                <th>ยี่ห้อ</th>
-                                <th>ประเภท</th>
-                                <th>ทะเบียนขาด</th>
-                                <th>ประกันขาด</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
+                let warningCount = 0; // ใกล้หมด (30 วัน)
+                let expiredCount = 0; // หมดแล้ว
+                const today = new Date();
+                today.setHours(0,0,0,0);
 
                 data.forEach(row => {
-                    // กรองแถวว่างออก
-                    if(row['รหัส']) { 
-                        tableHTML += `
-                            <tr>
-                                <td>${row['รหัส'] || '-'}</td>
-                                <td>${row['ทะเบียน'] || '-'}</td>
-                                <td>${row['ยี่ห้อรถ'] || '-'}</td>
-                                <td>${row['ประเภทรถ'] || '-'}</td>
-                                <td>${row['วันที่ทะเบียนขาด'] || '-'}</td>
-                                <td>${row['วันที่ประกัน+พรบ.ขาด'] || '-'}</td>
-                            </tr>
-                        `;
-                    }
+                    const checkDate = (dateString) => {
+                        if(!dateString || dateString.trim() === '') return;
+                        const parts = dateString.split('/');
+                        if(parts.length !== 3) return;
+                        
+                        // แปลง string เป็น Date Object (ระวัง: เดือนเริ่มที่ 0)
+                        const expiryDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        
+                        // หาจำนวนวัน
+                        const diffTime = expiryDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays < 0) {
+                            expiredCount++;
+                        } else if (diffDays >= 0 && diffDays <= 30) {
+                            warningCount++;
+                        }
+                    };
+
+                    checkDate(row['วันที่ทะเบียนขาด']);
+                    checkDate(row['วันที่ประกัน+พรบ.ขาด']);
                 });
 
-                tableHTML += `</tbody></table>`;
-                document.getElementById('data-display').innerHTML = tableHTML;
-                document.getElementById('data-display').classList.remove('loading');
-            },
-            error: function(err) {
-                document.getElementById('data-display').innerText = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+                const alertText = document.getElementById('alert-text');
+                const badge = document.getElementById('alert-badge');
+                
+                if (expiredCount > 0 || warningCount > 0) {
+                    alertText.innerHTML = `<span style="color:#ef4444; font-weight:bold;">ขาดแล้ว: ${expiredCount} คัน</span><br><span style="color:#f59e0b; font-weight:bold;">ใกล้ขาด: ${warningCount} คัน</span>`;
+                    badge.style.display = 'block';
+                    badge.innerText = expiredCount + warningCount;
+                } else {
+                    alertText.innerHTML = '<span style="color:#10b981;">สถานะปกติ <br>ไม่มีรายการใกล้หมดอายุ</span>';
+                }
             }
         });
     </script>

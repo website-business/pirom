@@ -3,22 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกการใช้น้ำมัน</title>
+    <title>บันทึกน้ำมัน</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body>
-
-    <div id="navbar-container"></div>
-
     <div class="container">
         <h2>⛽ รายงานการใช้น้ำมัน</h2>
-        <div id="data-display" class="loading">กำลังโหลดข้อมูล...</div>
+        <div id="data-display" class="loading"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>
     </div>
 
     <script src="menu.js"></script>
     <script>
-        // ลิงค์สำหรับหน้าน้ำมัน
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLxlqlfXntTk-z4x45kGjZ1OjHFnpCeaqjGZGpkfohr3difiJQsI-p-3iZwgyM7UO35kRztltMKgbd/pub?gid=700157187&single=true&output=csv';
 
         Papa.parse(SHEET_URL, {
@@ -26,34 +23,22 @@
             header: true,
             complete: function(results) {
                 const data = results.data;
-                let tableHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>วันที่</th>
-                                <th>รหัสรถ</th>
-                                <th>ปริมาณ (ลิตร)</th>
-                                <th>โครงการ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
+                let html = `<table><thead><tr>
+                    <th>วันที่</th><th>รหัสรถ</th><th>ปริมาณ (ลิตร)</th><th>โครงการ</th>
+                </tr></thead><tbody>`;
+                
                 data.forEach(row => {
                     if(row['วันที่']) {
-                        tableHTML += `
-                            <tr>
-                                <td>${row['วันที่'] || '-'}</td>
-                                <td>${row['รหัสรถ'] || '-'}</td>
-                                <td>${row['ปริมาณ(ลิตร)'] || '-'}</td>
-                                <td>${row['โครงการ'] || '-'}</td>
-                            </tr>
-                        `;
+                        html += `<tr>
+                            <td>${row['วันที่']}</td>
+                            <td>${row['รหัสรถ']}</td>
+                            <td>${row['ปริมาณ(ลิตร)']}</td>
+                            <td>${row['โครงการ']}</td>
+                        </tr>`;
                     }
                 });
-
-                tableHTML += `</tbody></table>`;
-                document.getElementById('data-display').innerHTML = tableHTML;
+                html += `</tbody></table>`;
+                document.getElementById('data-display').innerHTML = html;
                 document.getElementById('data-display').classList.remove('loading');
             }
         });
