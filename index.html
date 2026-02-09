@@ -42,8 +42,28 @@
             min-height: 100vh;
         }
 
+        /* --- LOADING SCREEN --- */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f8fafc; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.6s ease-out, visibility 0.6s;
+        }
+        .spinner-main {
+            width: 60px; height: 60px; border: 6px solid #e2e8f0;
+            border-top: 6px solid var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        .loading-text { font-size: 1.2rem; color: var(--text-main); font-weight: 600; }
+        .loading-sub { font-size: 0.9rem; color: var(--text-muted); margin-top: 5px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Utility Class to Hide Elements initially */
+        .hidden-initial { display: none; opacity: 0; transition: opacity 0.5s; }
+        .fade-in-content { display: block; animation: fadeInSimple 0.8s forwards; }
+
         /* --- ANIMATIONS --- */
-        @keyframes fadeInSimple { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInSimple { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .anim-fade { animation: fadeInSimple 0.4s ease-out forwards; }
         
         /* --- NAVBAR --- */
@@ -289,8 +309,15 @@
 </head>
 <body>
 
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay">
+        <div class="spinner-main"></div>
+        <div class="loading-text">กำลังเริ่มต้นระบบ...</div>
+        <div class="loading-sub">เชื่อมต่อฐานข้อมูลและดาวน์โหลดรายการ</div>
+    </div>
+
     <!-- NAVBAR -->
-    <nav class="navbar" id="main-navbar">
+    <nav class="navbar hidden-initial" id="main-navbar">
         <button class="nav-btn active" onclick="showSection('home')"><i class="fas fa-th-large"></i> Dashboard</button>
         <button class="nav-btn" onclick="showSection('info')"><i class="fas fa-truck-monster"></i> ข้อมูลรถ</button>
         <button class="nav-btn" onclick="showSection('fuel')"><i class="fas fa-gas-pump"></i> น้ำมัน</button>
@@ -299,7 +326,7 @@
         <button class="nav-btn" onclick="showSection('calc')" style="color: #8b5cf6;"><i class="fas fa-calculator"></i> คำนวณ</button>
     </nav>
 
-    <div class="container">
+    <div class="container hidden-initial" id="main-container">
 
         <!-- 1. DASHBOARD -->
         <div id="section-home" class="page-section active">
@@ -569,7 +596,7 @@
             </div>
         </div>
 
-        <!-- 6. NEW: CALCULATOR SECTION -->
+        <!-- 6. CALCULATOR SECTION -->
         <div id="section-calc" class="page-section">
             <h2 class="page-title" style="color:#8b5cf6;">เครื่องมือคำนวณ (Prorate)</h2>
             
@@ -686,7 +713,7 @@
         let currentAlertFilter = 'all';
 
         // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             Chart.defaults.font.family = "'Prompt', sans-serif";
             Chart.defaults.color = '#6b7280';
             Chart.defaults.animation.duration = 500; 
@@ -704,10 +731,31 @@
             const dd = String(today.getDate()).padStart(2, '0');
             document.getElementById('calc-startDate').value = `${yyyy}-${mm}-${dd}`;
 
-            // Load Data
-            loadInfoData();
-            loadFuelData();
-            loadRepairData();
+            // *** LOADING SEQUENCE ***
+            // Wait for all data to load before showing dashboard
+            try {
+                await Promise.all([
+                    loadInfoData(),
+                    loadFuelData(),
+                    loadRepairData()
+                ]);
+            } catch (error) {
+                console.error("Error loading data:", error);
+            }
+
+            // Hide Loading Screen & Show Content
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const mainContainer = document.getElementById('main-container');
+            const mainNavbar = document.getElementById('main-navbar');
+
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+                mainNavbar.classList.remove('hidden-initial');
+                mainContainer.classList.remove('hidden-initial');
+                mainContainer.classList.add('fade-in-content');
+            }, 600);
+
 
             // Link listeners
             document.getElementById('btn-go-info-fuel').addEventListener('click', () => {
@@ -871,32 +919,42 @@
         }
 
         // --- DATA LOADING & GAS INTEGRATION ---
-        async function loadInfoData() {
-            if (GAS_API_URL) {
-                try {
-                    const response = await fetch(GAS_API_URL);
-                    const data = await response.json();
-                    infoRawData = data.map(item => ({
-                        'รหัส': item.id || '', 
-                        'ทะเบียน': item.plate,
-                        'ยี่ห้อรถ': item.brand || '', 
-                        'ประเภทรถ': item.type || '',
-                        'วันที่ทะเบียนขาด': item.tax_expire
-                    }));
-                    processInfoData();
-                } catch (e) {
-                    console.error("GAS Load Error:", e);
-                    document.getElementById('info-list-container').innerHTML = '<div style="text-align:center; color:red; padding:20px;">โหลดข้อมูลไม่สำเร็จ (ตรวจสอบ URL)</div>';
-                }
-            } else {
-                Papa.parse(SHEET_INFO, {
-                    download: true, header: true,
-                    complete: res => {
-                        infoRawData = res.data;
+        function loadInfoData() {
+            return new Promise((resolve, reject) => {
+                if (GAS_API_URL) {
+                    fetch(GAS_API_URL)
+                    .then(response => response.json())
+                    .then(data => {
+                        infoRawData = data.map(item => ({
+                            'รหัส': item.id || '', 
+                            'ทะเบียน': item.plate,
+                            'ยี่ห้อรถ': item.brand || '', 
+                            'ประเภทรถ': item.type || '',
+                            'วันที่ทะเบียนขาด': item.tax_expire
+                        }));
                         processInfoData();
-                    }
-                });
-            }
+                        resolve();
+                    })
+                    .catch(e => {
+                        console.error("GAS Load Error:", e);
+                        document.getElementById('info-list-container').innerHTML = '<div style="text-align:center; color:red; padding:20px;">โหลดข้อมูลไม่สำเร็จ (ตรวจสอบ URL)</div>';
+                        resolve(); // Resolve anyway so dashboard can load other parts
+                    });
+                } else {
+                    Papa.parse(SHEET_INFO, {
+                        download: true, header: true,
+                        complete: res => {
+                            infoRawData = res.data;
+                            processInfoData();
+                            resolve();
+                        },
+                        error: (err) => {
+                            console.error(err);
+                            resolve();
+                        }
+                    });
+                }
+            });
         }
 
         function processInfoData() {
@@ -1256,28 +1314,36 @@
 
         // --- FUEL & REPAIR LOGIC (CSV) ---
         function loadFuelData() {
-            Papa.parse(SHEET_FUEL, {
-                download: true, header: true,
-                complete: res => {
-                    fuelRawData = res.data.filter(r => r['วันที่']);
-                    populateProjectFilter('fuel', fuelRawData); 
-                    updateFuelChart(); 
-                    let total = 0; fuelRawData.forEach(r => total += parseFloat((r['ปริมาณ(ลิตร)']||'0').replace(/,/g,'')));
-                    document.getElementById('dash-stat-fuel').innerText = total.toLocaleString();
-                }
+            return new Promise((resolve) => {
+                Papa.parse(SHEET_FUEL, {
+                    download: true, header: true,
+                    complete: res => {
+                        fuelRawData = res.data.filter(r => r['วันที่']);
+                        populateProjectFilter('fuel', fuelRawData); 
+                        updateFuelChart(); 
+                        let total = 0; fuelRawData.forEach(r => total += parseFloat((r['ปริมาณ(ลิตร)']||'0').replace(/,/g,'')));
+                        document.getElementById('dash-stat-fuel').innerText = total.toLocaleString();
+                        resolve();
+                    },
+                    error: (err) => { console.error(err); resolve(); }
+                });
             });
         }
 
         function loadRepairData() {
-            Papa.parse(SHEET_REPAIR, {
-                download: true, header: true,
-                complete: res => {
-                    repairRawData = res.data.filter(r => r['วันที่']);
-                    populateProjectFilter('repair', repairRawData);
-                    updateRepairChart();
-                    let total = 0; repairRawData.forEach(r => total += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
-                    document.getElementById('dash-stat-repair').innerText = total.toLocaleString();
-                }
+            return new Promise((resolve) => {
+                Papa.parse(SHEET_REPAIR, {
+                    download: true, header: true,
+                    complete: res => {
+                        repairRawData = res.data.filter(r => r['วันที่']);
+                        populateProjectFilter('repair', repairRawData);
+                        updateRepairChart();
+                        let total = 0; repairRawData.forEach(r => total += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
+                        document.getElementById('dash-stat-repair').innerText = total.toLocaleString();
+                        resolve();
+                    },
+                    error: (err) => { console.error(err); resolve(); }
+                });
             });
         }
 
