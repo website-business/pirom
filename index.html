@@ -230,6 +230,7 @@
         .fc-right { text-align: right; }
         .fc-vol { font-size: 1.6rem; font-weight: 700; color: var(--primary); line-height: 1; }
         .fc-unit { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .fc-desc { font-size: 0.85rem; color: #6b7280; margin-top: 2px; }
 
         .table-card { background: white; border-radius: 20px; box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); }
         .table-responsive { overflow-x: auto; }
@@ -304,6 +305,17 @@
         .res-label { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
         .res-val { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
         .res-total { color: #6366f1; font-size: 1.3rem; }
+
+        /* --- REPAIR ALERT BADGE --- */
+        .repair-alert-btn {
+            background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;
+            margin-right: 10px; display: none; font-weight: 600;
+        }
+        .repair-alert-btn:hover { background: #fecaca; }
+        .repair-alert-item {
+            background: #fff5f5; border-left: 4px solid #ef4444;
+            padding: 10px; margin-bottom: 8px; border-radius: 8px;
+        }
 
     </style>
 </head>
@@ -531,6 +543,11 @@
             <div class="filter-controls">
                 <div class="chart-header-title" id="repair-chart-title" style="color:#10b981;">ภาพรวมรายปี</div>
                 <div class="controls-group">
+                    <!-- REPAIR ALERT BUTTON -->
+                    <button class="btn-back repair-alert-btn" id="btn-repair-alert" onclick="openRepairAlertModal()">
+                        <i class="fas fa-exclamation-triangle"></i> พบซ่อมซ้ำซ้อน <span id="repair-alert-count">0</span> รายการ
+                    </button>
+
                     <select id="repair-project-filter" class="project-select" onchange="onRepairProjectFilterChange()"><option value="all">รวมทุกโครงการ</option></select>
                     <button class="btn-back" id="repair-back-btn" onclick="drillUpRepair()" style="display:none;"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button>
                 </div>
@@ -685,6 +702,17 @@
             </div>
         </div>
     </div>
+    
+    <!-- REPAIR ALERT MODAL -->
+    <div id="repairAlertModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> รายการซ่อมซ้ำซ้อน (30 วัน)</h3>
+                <button onclick="closeRepairAlertModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div id="repairAlertList"></div>
+        </div>
+    </div>
 
     <!-- SCRIPT -->
     <script>
@@ -711,6 +739,7 @@
         let fuelState = { level: 'year', selectedYear: null, selectedMonth: null, selectedDay: null, selectedVehicle: null, selectedProject: 'all' };
         let repairState = { level: 'year', selectedYear: null, selectedMonth: null, selectedDay: null, selectedVehicle: null, selectedProject: 'all' };
         let currentAlertFilter = 'all';
+        let repairAlerts = []; // Store repeat repair alerts
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
@@ -843,7 +872,8 @@
                     let unit = type === 'fuel' ? 'ลิตร' : 'บาท';
                     let val = parseFloat((r[valKey]||'0').replace(/,/g,'')).toLocaleString();
                     let icon = type === 'fuel' ? 'fa-gas-pump' : 'fa-tools';
-                    let color = type === 'fuel' ? 'var(--warning)' : '#10b981'; // Orange or Green
+                    let color = type === 'fuel' ? 'var(--warning)' : '#10b981'; 
+                    let desc = type === 'repair' ? (r['รายการ'] || '-') : (r['โครงการ'] || '-');
                     
                     html += `
                     <div class="item-card" style="cursor:default; flex-shrink: 0;">
@@ -851,7 +881,7 @@
                             <div style="width:40px; text-align:center;"><i class="fas ${icon}" style="color:${color}; font-size:1.2rem;"></i></div>
                             <div class="fc-info">
                                 <div class="fc-id" style="font-size:1rem;">${r['วันที่']}</div>
-                                <div class="fc-proj">${r['โครงการ']||'-'}</div>
+                                <div class="fc-proj">${desc}</div>
                             </div>
                         </div>
                         <div class="fc-right">
@@ -867,6 +897,84 @@
         function closeHistoryModal() {
             document.getElementById('historyModal').style.display = 'none';
         }
+        
+        // --- REPAIR ALERT LOGIC ---
+        function checkRepeatRepairs(data) {
+            let alerts = [];
+            let vehicles = {};
+            
+            // Group by Vehicle ID
+            data.forEach(r => {
+                if(!r['รหัสรถ']) return;
+                if(!vehicles[r['รหัสรถ']]) vehicles[r['รหัสรถ']] = [];
+                vehicles[r['รหัสรถ']].push(r);
+            });
+            
+            for(let vid in vehicles) {
+                let records = vehicles[vid].sort((a,b) => {
+                    let da = a['วันที่'].split('/'); let db = b['วันที่'].split('/');
+                    return new Date(da[2], da[1]-1, da[0]) - new Date(db[2], db[1]-1, db[0]);
+                });
+                
+                for(let i=0; i<records.length; i++) {
+                    for(let j=i+1; j<records.length; j++) {
+                        let d1 = records[i]['วันที่'].split('/');
+                        let d2 = records[j]['วันที่'].split('/');
+                        let date1 = new Date(d1[2], d1[1]-1, d1[0]);
+                        let date2 = new Date(d2[2], d2[1]-1, d2[0]);
+                        
+                        let diffTime = Math.abs(date2 - date1);
+                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        
+                        if(diffDays > 30) break; // Sorted, so no need to check further
+                        
+                        if(records[i]['รายการ'] && records[j]['รายการ'] && records[i]['รายการ'] === records[j]['รายการ']) {
+                             alerts.push({
+                                 vehicle: vid,
+                                 item: records[i]['รายการ'],
+                                 date1: records[i]['วันที่'],
+                                 date2: records[j]['วันที่'],
+                                 diff: diffDays
+                             });
+                        }
+                    }
+                }
+            }
+            return alerts;
+        }
+        
+        function updateRepairAlertUI() {
+             repairAlerts = checkRepeatRepairs(repairRawData);
+             const btn = document.getElementById('btn-repair-alert');
+             const countSpan = document.getElementById('repair-alert-count');
+             
+             if(repairAlerts.length > 0) {
+                 btn.style.display = 'inline-flex';
+                 countSpan.innerText = repairAlerts.length;
+             } else {
+                 btn.style.display = 'none';
+             }
+        }
+        
+        function openRepairAlertModal() {
+            document.getElementById('repairAlertModal').style.display = 'flex';
+            let html = '';
+            repairAlerts.forEach(a => {
+                html += `
+                <div class="repair-alert-item">
+                    <div style="font-weight:600; color:#333;">${a.vehicle} - ${a.item}</div>
+                    <div style="font-size:0.9rem; color:#666;">
+                        <i class="far fa-calendar-alt"></i> ${a.date1} และ ${a.date2} (ห่างกัน ${a.diff} วัน)
+                    </div>
+                </div>`;
+            });
+            document.getElementById('repairAlertList').innerHTML = html;
+        }
+        
+        function closeRepairAlertModal() {
+            document.getElementById('repairAlertModal').style.display = 'none';
+        }
+
 
         // --- SEARCH FUNCTION ---
         function searchVehicle(containerId, query) {
@@ -1051,8 +1159,20 @@
             if(id==='alerts') btns[4].classList.add('active');
             if(id==='calc') { /* No button to highlight if handled via onclick */ }
 
-            if(id==='fuel') { if(fuelChartInstance) fuelChartInstance.resize(); if(vehicleChartInstance) vehicleChartInstance.resize(); }
-            if(id==='repair') { if(repairChartInstance) repairChartInstance.resize(); if(repairVehicleChartInstance) repairVehicleChartInstance.resize(); }
+            if(id==='fuel') { 
+                // Only resize if the container is visible
+                const wrapper = document.getElementById('fuel-charts-wrapper');
+                if(fuelChartInstance && wrapper && wrapper.style.display !== 'none') {
+                    fuelChartInstance.resize();
+                }
+            }
+            
+            if(id==='repair') {
+                 const wrapper = document.getElementById('repair-charts-wrapper');
+                 if(repairChartInstance && wrapper && wrapper.style.display !== 'none') {
+                     repairChartInstance.resize();
+                 }
+            }
             if(id==='alerts') renderAlertsTable('all');
         }
 
@@ -1335,9 +1455,14 @@
                 Papa.parse(SHEET_REPAIR, {
                     download: true, header: true,
                     complete: res => {
-                        repairRawData = res.data.filter(r => r['วันที่']);
+                        // Map CSV column 'รายการซ่อม/เปลี่ยน' to 'รายการ'
+                        repairRawData = res.data.filter(r => r['วันที่']).map(r => ({
+                            ...r,
+                            'รายการ': r['รายการซ่อม/เปลี่ยน']
+                        }));
                         populateProjectFilter('repair', repairRawData);
                         updateRepairChart();
+                        updateRepairAlertUI(); // Check for repeat repairs
                         let total = 0; repairRawData.forEach(r => total += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
                         document.getElementById('dash-stat-repair').innerText = total.toLocaleString();
                         resolve();
@@ -1370,20 +1495,28 @@
 
             // Update Summary
             let sumVal = 0;
+            let summaryItems = contextData; // สร้างตัวแปรพักข้อมูลสำหรับคำนวณยอด
+
             if (fuelState.level === 'year') {
-                contextData.forEach(r => sumVal += parseFloat((r['ปริมาณ(ลิตร)']||'0').replace(/,/g,'')));
+                // ใช้ข้อมูลทั้งหมด (กรองโครงการแล้ว)
             } else if (fuelState.level === 'month') {
-                contextData = contextData.filter(r => r['วันที่'].split('/')[2] === fuelState.selectedYear);
-                contextData.forEach(r => sumVal += parseFloat((r['ปริมาณ(ลิตร)']||'0').replace(/,/g,'')));
+                summaryItems = summaryItems.filter(r => r['วันที่'].split('/')[2] === fuelState.selectedYear);
             } else if (fuelState.level === 'day') {
-                contextData = contextData.filter(r => r['วันที่'].split('/')[2] === fuelState.selectedYear && (parseInt(r['วันที่'].split('/')[1])-1) === fuelState.selectedMonth);
-                contextData.forEach(r => sumVal += parseFloat((r['ปริมาณ(ลิตร)']||'0').replace(/,/g,'')));
+                summaryItems = summaryItems.filter(r => r['วันที่'].split('/')[2] === fuelState.selectedYear && (parseInt(r['วันที่'].split('/')[1])-1) === fuelState.selectedMonth);
             } else if (fuelState.level === 'detail') {
                  let dStr = `${fuelState.selectedDay.toString().padStart(2,'0')}/${(fuelState.selectedMonth+1).toString().padStart(2,'0')}/${fuelState.selectedYear}`;
-                 contextData = contextData.filter(r => r['วันที่']===dStr);
-                 contextData.forEach(r => sumVal += parseFloat((r['ปริมาณ(ลิตร)']||'0').replace(/,/g,'')));
+                 summaryItems = summaryItems.filter(r => r['วันที่']===dStr);
+            } else if (fuelState.level === 'vehicle_detail') {
+                // เพิ่มเงื่อนไขสำหรับหน้ารายละเอียดรถ
+                summaryItems = summaryItems.filter(r => r['รหัสรถ'] === fuelState.selectedVehicle);
+                // กรองตามช่วงเวลาที่เลือกค้างไว้ (ถ้ามี)
+                if (fuelState.selectedYear) summaryItems = summaryItems.filter(r => r['วันที่'].split('/')[2] === fuelState.selectedYear);
+                if (fuelState.selectedMonth != null) summaryItems = summaryItems.filter(r => (parseInt(r['วันที่'].split('/')[1])-1) === fuelState.selectedMonth);
             }
-            document.getElementById('fuel-summary-val').innerText = sumVal.toLocaleString();
+            
+            // คำนวณผลรวมจาก summaryItems ที่กรองแล้ว
+            summaryItems.forEach(r => sumVal += parseFloat((r['ปริมาณ(ลิตร)']||'0').replace(/,/g,'')));
+            document.getElementById('fuel-summary-val').innerText = sumVal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
 
 
             document.getElementById('fuel-charts-wrapper').style.display = 'grid'; 
@@ -1469,20 +1602,26 @@
 
             // Update Summary
             let sumVal = 0;
+            let summaryItems = contextData;
+
             if (repairState.level === 'year') {
-                contextData.forEach(r => sumVal += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
+                // ใช้ข้อมูลทั้งหมด
             } else if (repairState.level === 'month') {
-                contextData = contextData.filter(r => r['วันที่'].split('/')[2] === repairState.selectedYear);
-                contextData.forEach(r => sumVal += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
+                summaryItems = summaryItems.filter(r => r['วันที่'].split('/')[2] === repairState.selectedYear);
             } else if (repairState.level === 'day') {
-                contextData = contextData.filter(r => r['วันที่'].split('/')[2] === repairState.selectedYear && (parseInt(r['วันที่'].split('/')[1])-1) === repairState.selectedMonth);
-                contextData.forEach(r => sumVal += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
+                summaryItems = summaryItems.filter(r => r['วันที่'].split('/')[2] === repairState.selectedYear && (parseInt(r['วันที่'].split('/')[1])-1) === repairState.selectedMonth);
             } else if (repairState.level === 'detail') {
                  let dStr = `${repairState.selectedDay.toString().padStart(2,'0')}/${(repairState.selectedMonth+1).toString().padStart(2,'0')}/${repairState.selectedYear}`;
-                 contextData = contextData.filter(r => r['วันที่']===dStr);
-                 contextData.forEach(r => sumVal += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
+                 summaryItems = summaryItems.filter(r => r['วันที่']===dStr);
+            } else if (repairState.level === 'vehicle_detail') {
+                // เพิ่มเงื่อนไขสำหรับหน้ารายละเอียดรถ (Repair)
+                summaryItems = summaryItems.filter(r => r['รหัสรถ'] === repairState.selectedVehicle);
+                if (repairState.selectedYear) summaryItems = summaryItems.filter(r => r['วันที่'].split('/')[2] === repairState.selectedYear);
+                if (repairState.selectedMonth != null) summaryItems = summaryItems.filter(r => (parseInt(r['วันที่'].split('/')[1])-1) === repairState.selectedMonth);
             }
-            document.getElementById('repair-summary-val').innerText = sumVal.toLocaleString();
+            
+            summaryItems.forEach(r => sumVal += parseFloat((r['ค่าใช้จ่าย']||'0').replace(/,/g,'')));
+            document.getElementById('repair-summary-val').innerText = sumVal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
 
 
             document.getElementById('repair-charts-wrapper').style.display = 'grid'; 
@@ -1579,7 +1718,8 @@
             let html = '';
             sorted.forEach(r => {
                 let val = parseFloat((r[valKey]||'0').replace(/,/g,'')).toLocaleString();
-                html += `<div class="item-card anim-fade" onclick="selectVehicle('${type}','${r['รหัสรถ']}')"><div class="fc-left"><i class="fas ${type==='fuel'?'fa-gas-pump':'fa-tools'} fc-icon" style="color:${type==='fuel'?'#bfdbfe':'#6ee7b7'}"></i><div class="fc-info"><div class="fc-id">${r['รหัสรถ']}</div><div class="fc-proj">${r['โครงการ']||'-'}</div></div></div><div class="fc-right"><div class="fc-vol" style="color:${type==='fuel'?'var(--primary)':'#10b981'}">${val}</div></div></div>`;
+                let desc = type === 'repair' ? (r['รายการ'] || '-') : (r['โครงการ'] || '-');
+                html += `<div class="item-card anim-fade" onclick="selectVehicle('${type}','${r['รหัสรถ']}')"><div class="fc-left"><i class="fas ${type==='fuel'?'fa-gas-pump':'fa-tools'} fc-icon" style="color:${type==='fuel'?'#bfdbfe':'#6ee7b7'}"></i><div class="fc-info"><div class="fc-id">${r['รหัสรถ']} <span style="font-size:0.8rem;color:#999;">(${r['วันที่']})</span></div><div class="fc-proj">${desc}</div></div></div><div class="fc-right"><div class="fc-vol" style="color:${type==='fuel'?'var(--primary)':'#10b981'}">${val}</div></div></div>`;
             });
             document.getElementById(`${type}-card-list`).innerHTML = html || '<div style="text-align:center;padding:20px;color:#ccc">ไม่มีรายการ</div>';
         }
