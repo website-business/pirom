@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Machine Dashboard</title>
+    <title>Smart Machine Dashboard (Stable)</title>
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -23,9 +23,11 @@
             --danger: #ef4444;
             --warning: #f59e0b;
             --success: #10b981;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
-        body { font-family: 'Prompt', sans-serif; margin: 0; padding: 0; background: var(--bg-color); color: var(--text-main); padding-bottom: 50px; }
+        body { font-family: 'Prompt', sans-serif; margin: 0; padding: 0; background: var(--bg-color); color: var(--text-main); padding-bottom: 50px; overflow-x: hidden; }
         
         /* --- LOADER --- */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease-out; }
@@ -229,18 +231,32 @@
         <div id="page-fuel" class="page-section">
             <div class="filter-bar"><h2 style="margin:0; color:#f59e0b;">สถิติน้ำมัน</h2><div class="controls-group"><select id="fuel-filter" class="custom-select" onchange="renderFuelPage()"><option value="all">ทุกโครงการ</option></select><button id="fuel-up-btn" class="btn-back" style="display:none" onclick="fuelUp()">กลับ</button></div></div>
             <div class="summary-box">รวม: <span id="fuel-sum" class="summary-val" style="color:#f59e0b">0</span> ลิตร</div>
-            <div id="fuel-charts-area" class="charts-wrapper"><div class="chart-box"><div id="fuel-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><canvas id="chartFuel"></canvas></div><div class="list-box"><div class="chart-internal-title">Top 10 (ลิตร)</div><div id="fuel-top10" class="top10-list-container"></div></div></div>
+            <div id="fuel-charts-area" class="charts-wrapper"><div class="chart-box"><div id="fuel-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><div style="flex-grow:1; position:relative; height:85%;"><canvas id="chartFuel"></canvas></div></div><div class="list-box"><div class="chart-internal-title">Top 10 (ลิตร)</div><div id="fuel-top10" class="top10-list-container"></div></div></div>
             <div id="fuel-details" class="card-list" style="margin-top:20px; display:none;"></div>
-            <div id="fuel-vehicle-detail" class="vehicle-view"><div class="vv-header"><div><h2 id="fuel-vv-id" style="margin:0; color:var(--primary)">-</h2><span id="fuel-vv-plate" style="color:#666">-</span></div><button class="btn-back" onclick="goToInfo(currentFuelCarId)">ดูข้อมูลรถคันนี้</button></div><div class="chart-box"><canvas id="fuelVehicleChart"></canvas></div></div>
+            <div id="fuel-vehicle-detail" class="vehicle-view">
+                <div class="vv-header"><div><h2 id="fuel-vv-id" style="margin:0; color:var(--primary)">-</h2><span id="fuel-vv-plate" style="color:#666">-</span></div><button class="btn-back" onclick="closePageVehicle('fuel')">ย้อนกลับ</button></div>
+                <div class="vv-actions"><button class="btn-back" onclick="goToInfo(currentFuelCarId)">ดูข้อมูลรถคันนี้</button></div>
+                <div class="chart-box" style="display:flex; flex-direction:column;">
+                     <div class="chart-internal-title" style="margin-bottom:10px;">สถิติน้ำมัน (รายปี)</div>
+                     <div style="flex-grow:1; position:relative;"><canvas id="fuelVehicleChart"></canvas></div>
+                </div>
+            </div>
         </div>
 
         <!-- 4. REPAIR -->
         <div id="page-repair" class="page-section">
             <div class="filter-bar"><h2 style="margin:0; color:#10b981;">สถิติซ่อมบำรุง</h2><div class="controls-group"><button id="btn-repair-alert" class="alert-badge-btn repair-alert-btn" onclick="openRepeatModal()"><i class="fas fa-exclamation-triangle"></i> ซ้ำ <span id="badge-count">0</span></button><select id="repair-filter" class="custom-select" onchange="renderRepairPage()"><option value="all">ทุกโครงการ</option></select><button id="repair-up-btn" class="btn-back" style="display:none" onclick="repairUp()">กลับ</button></div></div>
             <div class="summary-box">รวม: <span id="repair-sum" class="summary-val" style="color:#10b981">0</span> บาท</div>
-            <div id="repair-charts-area" class="charts-wrapper"><div class="chart-box"><div id="repair-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><canvas id="chartRepair"></canvas></div><div class="list-box"><div class="chart-internal-title">Top 10 (บาท)</div><div id="repair-top10" class="top10-list-container"></div></div></div>
+            <div id="repair-charts-area" class="charts-wrapper"><div class="chart-box"><div id="repair-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><div style="flex-grow:1; position:relative; height:85%;"><canvas id="chartRepair"></canvas></div></div><div class="list-box"><div class="chart-internal-title">Top 10 (บาท)</div><div id="repair-top10" class="top10-list-container"></div></div></div>
             <div id="repair-details" class="card-list" style="margin-top:20px; display:none;"></div>
-            <div id="repair-vehicle-detail" class="vehicle-view"><div class="vv-header"><div><h2 id="repair-vv-id" style="margin:0; color:#10b981">-</h2><span id="repair-vv-plate" style="color:#666">-</span></div><button class="btn-back" onclick="goToInfo(currentRepairCarId)">ดูข้อมูลรถคันนี้</button></div><div class="chart-box"><canvas id="repairVehicleChart"></canvas></div></div>
+            <div id="repair-vehicle-detail" class="vehicle-view">
+                <div class="vv-header"><div><h2 id="repair-vv-id" style="margin:0; color:#10b981">-</h2><span id="repair-vv-plate" style="color:#666">-</span></div><button class="btn-back" onclick="closePageVehicle('repair')">ย้อนกลับ</button></div>
+                <div class="vv-actions"><button class="btn-back" onclick="goToInfo(currentRepairCarId)">ดูข้อมูลรถคันนี้</button></div>
+                <div class="chart-box" style="display:flex; flex-direction:column;">
+                    <div class="chart-internal-title" style="margin-bottom:10px;">สถิติซ่อมบำรุง (รายปี)</div>
+                    <div style="flex-grow:1; position:relative;"><canvas id="repairVehicleChart"></canvas></div>
+                </div>
+            </div>
         </div>
 
         <!-- 5. ALERTS -->
@@ -272,7 +288,8 @@
 
         // STATE
         let dInfo=[], dFuel=[], dRepair=[], dShops={}, dProjects={};
-        let charts={};
+        // Fix: Use global object store charts to destroy them properly on resize/redraw
+        let charts = {};
         let sFuel={scope:'year', year:null, month:null}, sRepair={scope:'year', year:null, month:null};
         let sInfoFuel={scope:'year', year:null, month:null}, sInfoRepair={scope:'year', year:null, month:null};
         let sProjFuel={scope:'year', year:null, month:null}, sProjRepair={scope:'year', year:null, month:null};
@@ -281,29 +298,47 @@
 
         // HELPER FUNCTIONS 
         function parse(v) { return parseFloat((String(v)||'0').replace(/,/g,'')) || 0; }
+        
+        // Fix: Robust Date Parsing for DD/MM/YYYY and YYYY-MM-DD
         function toDate(s) { 
             if(!s) return new Date(0); 
-            let p=s.split('/'); 
-            if(p.length===3) return new Date(p[2], p[1]-1, p[0]); // DD/MM/YYYY
+            s = String(s).trim();
+            if(s.includes('/')) {
+                let p = s.split('/'); 
+                if(p.length===3) return new Date(p[2], p[1]-1, p[0]); 
+            } else if(s.includes('-')) {
+                 let p = s.split('-');
+                 if(p.length===3) return new Date(p[0], p[1]-1, p[2]); // YYYY-MM-DD
+            }
             return new Date(0);
         }
+
         function checkDate(s) {
             if(!s) return 'ok';
-            let diff = Math.ceil((toDate(s)-new Date())/86400000);
-            if(diff<0) return 'exp'; if(diff<30) return 'near'; return 'ok';
+            let d = toDate(s);
+            if(d.getTime() === new Date(0).getTime()) return 'ok'; // Invalid date treated as ok
+            let now = new Date();
+            now.setHours(0,0,0,0);
+            let diff = Math.ceil((d - now)/86400000);
+            if(diff < 0) return 'exp'; if(diff < 30) return 'near'; return 'ok';
         }
+
         function formatTax(s) {
             let st = checkDate(s);
             let color = st=='exp'?'#ef4444' : (st=='near'?'#f59e0b':'#10b981');
             return `<span style="color:${color}; font-weight:bold">${s||'-'}</span>`;
         }
-        function destroyChart(id) { let chart = Chart.getChart(id); if (chart) { chart.destroy(); } }
         
+        // Fix: Proper Chart Destruction and Storage
         function drawChart(id, type, data, key, color, isMini, customData, onClick) {
             let canvas = document.getElementById(id);
             if(!canvas) return;
             let ctx = canvas.getContext('2d');
-            destroyChart(id);
+            
+            // Destroy existing chart if it exists
+            if (charts[id]) {
+                charts[id].destroy();
+            }
 
             let chartData;
             if(customData) {
@@ -311,15 +346,20 @@
             } else {
                 let g={};
                 data.forEach(r => { 
-                    let p=r['วันที่'].split('/'); 
-                    if(p.length===3) { let k=p[1]+'/'+p[2]; g[k]=(g[k]||0)+parse(r[key]); }
+                    let dt = toDate(r['วันที่']);
+                    if(dt.getTime() > 0) {
+                         let y = dt.getFullYear();
+                         let m = String(dt.getMonth()+1).padStart(2, '0');
+                         let k = m+'/'+y; 
+                         g[k]=(g[k]||0)+parse(r[key]); 
+                    }
                 });
                 let lbl = Object.keys(g).sort((a,b)=>{ let x=a.split('/'), y=b.split('/'); return (x[1]-y[1])||(x[0]-y[0]); });
                 if(isMini) lbl = lbl.slice(-12);
                 chartData = { labels:lbl, data:lbl.map(k=>g[k]) };
             }
 
-            new Chart(ctx, {
+            charts[id] = new Chart(ctx, {
                 type: type,
                 data: {
                     labels: chartData.labels,
@@ -390,9 +430,9 @@
                      for(let j=i+1; j<list.length; j++) {
                          let diff = (toDate(list[i]['วันที่']) - toDate(list[j]['วันที่']))/86400000;
                          if(diff > 90) break;
-                         let item1 = (list[i].item||'').trim();
-                         let item2 = (list[j].item||'').trim();
-                         if(item1 && item1===item2) repeatList.push({id:id, item:item1, d1:list[i]['วันที่'], d2:list[j]['วันที่']});
+                         let item1 = (list[i].item||'').trim().toLowerCase();
+                         let item2 = (list[j].item||'').trim().toLowerCase();
+                         if(item1 && item1===item2) repeatList.push({id:id, item:list[i].item, d1:list[i]['วันที่'], d2:list[j]['วันที่']});
                      }
                  }
              }
@@ -517,9 +557,8 @@
             if(monthFilter) {
                 let [y, m] = monthFilter.split('-');
                 list = list.filter(r => {
-                    let p = r['วันที่'].split('/');
-                    if(p.length!==3) return false;
-                    return p[2] === y && p[1] === m;
+                    let d = toDate(r['วันที่']);
+                    return d.getFullYear() == y && (d.getMonth() + 1) == m;
                 });
             }
 
@@ -618,7 +657,6 @@
                 populateDatalist(); 
                 populateFilters(); 
                 updateDash();
-                // Lazy render on init only if active page is specific, else wait for nav click. But we start at home.
             } catch(e) { console.error(e); }
             
             document.getElementById('loading-overlay').style.opacity = '0';
@@ -636,7 +674,6 @@
             document.getElementById(`page-${page}`).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             
-            // Set active class via loop matching onclick string
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 if(btn.getAttribute('onclick').includes(page)) btn.classList.add('active');
             });
@@ -659,6 +696,7 @@
         // --- VEHICLE DETAIL LOGIC ---
         window.viewCar = (id) => {
             curCar = dInfo.find(x=>x.id===id);
+            if (!curCar) return; // Guard clause
             document.getElementById('info-list-view').style.display='none';
             document.getElementById('info-detail-view').style.display='block';
             
@@ -675,6 +713,59 @@
             renderInfoChart('repair', sInfoRepair, dRepair, 'ค่าใช้จ่าย', '#10b981', 'infoChartRepair', 'info-repair-title', 'info-repair-back');
         };
 
+        // Fix: Implement missing openPageVehicle function
+        window.openPageVehicle = (type, id) => {
+            let car = dInfo.find(x => x.id === id);
+            if (!car) car = { id: id, plate: 'ไม่พบข้อมูล' };
+
+            if (type === 'fuel') {
+                currentFuelCarId = id;
+                document.getElementById('fuel-charts-area').style.display = 'none';
+                document.getElementById('fuel-details').style.display = 'none';
+                document.getElementById('fuel-vehicle-detail').style.display = 'block';
+                document.getElementById('fuel-vv-id').innerText = car.id;
+                document.getElementById('fuel-vv-plate').innerText = car.plate;
+                
+                // Draw chart for specific vehicle in fuel page
+                let vehicleData = dFuel.filter(x => x['รหัสรถ'] === id);
+                let grouped = {};
+                vehicleData.forEach(r => { let y=toDate(r['วันที่']).getFullYear(); if(y>1970) grouped[y]=(grouped[y]||0)+parse(r['ปริมาณ(ลิตร)']); });
+                let labels = Object.keys(grouped).sort();
+                
+                setTimeout(() => {
+                    drawChart('fuelVehicleChart', 'bar', null, 'ปริมาณ(ลิตร)', '#f59e0b', false, {labels, data:labels.map(l=>grouped[l])});
+                }, 100);
+
+            } else if (type === 'repair') {
+                currentRepairCarId = id;
+                document.getElementById('repair-charts-area').style.display = 'none';
+                document.getElementById('repair-details').style.display = 'none';
+                document.getElementById('repair-vehicle-detail').style.display = 'block';
+                document.getElementById('repair-vv-id').innerText = car.id;
+                document.getElementById('repair-vv-plate').innerText = car.plate;
+
+                let vehicleData = dRepair.filter(x => x['รหัสรถ'] === id);
+                let grouped = {};
+                vehicleData.forEach(r => { let y=toDate(r['วันที่']).getFullYear(); if(y>1970) grouped[y]=(grouped[y]||0)+parse(r['ค่าใช้จ่าย']); });
+                let labels = Object.keys(grouped).sort();
+
+                setTimeout(() => {
+                    drawChart('repairVehicleChart', 'bar', null, 'ค่าใช้จ่าย', '#10b981', false, {labels, data:labels.map(l=>grouped[l])});
+                }, 100);
+            }
+        };
+
+        window.closePageVehicle = (type) => {
+             document.getElementById(`${type}-vehicle-detail`).style.display = 'none';
+             document.getElementById(`${type}-charts-area`).style.display = 'grid';
+        };
+        
+        // Link to Info Page from Fuel/Repair Detail
+        window.goToInfo = (id) => {
+            nav('info');
+            viewCar(id);
+        }
+
         function renderInfoChart(type, state, rawData, valKey, color, canvasId, titleId, backBtnId) {
             if(!curCar) return;
             let data = rawData.filter(x => x['รหัสรถ']?.trim() === curCar.id?.trim());
@@ -682,16 +773,16 @@
 
             if(state.scope === 'year') {
                 title = "รายปี"; backBtn.style.display='none';
-                data.forEach(r => { let y=r['วันที่'].split('/')[2]; grouped[y]=(grouped[y]||0)+parse(r[valKey]); });
+                data.forEach(r => { let dt=toDate(r['วันที่']); if(dt>0){ let y=dt.getFullYear(); grouped[y]=(grouped[y]||0)+parse(r[valKey]); }});
             } else if(state.scope === 'month') {
                 title = "ปี "+state.year; backBtn.style.display='inline-flex';
-                data = data.filter(r => r['วันที่'].split('/')[2] == state.year);
-                data.forEach(r => { let m=parseInt(r['วันที่'].split('/')[1]); grouped[MONTHS[m-1]]=(grouped[MONTHS[m-1]]||0)+parse(r[valKey]); });
+                data = data.filter(r => toDate(r['วันที่']).getFullYear() == state.year);
+                data.forEach(r => { let m=toDate(r['วันที่']).getMonth(); grouped[MONTHS[m]]=(grouped[MONTHS[m]]||0)+parse(r[valKey]); });
             } else if(state.scope === 'day') {
                 title = "เดือน "+state.month; backBtn.style.display='inline-flex';
-                let mIdx = MONTHS.indexOf(state.month)+1;
-                data = data.filter(r => r['วันที่'].split('/')[2] == state.year && parseInt(r['วันที่'].split('/')[1]) == mIdx);
-                data.forEach(r => { let d=parseInt(r['วันที่'].split('/')[0]); grouped[d]=(grouped[d]||0)+parse(r[valKey]); });
+                let mIdx = MONTHS.indexOf(state.month);
+                data = data.filter(r => { let dt=toDate(r['วันที่']); return dt.getFullYear() == state.year && dt.getMonth() == mIdx; });
+                data.forEach(r => { let d=toDate(r['วันที่']).getDate(); grouped[d]=(grouped[d]||0)+parse(r[valKey]); });
             }
 
             let labels = Object.keys(grouped).sort((a,b)=>{ if(state.scope==='month') return MONTHS.indexOf(a)-MONTHS.indexOf(b); return a-b; });
@@ -750,9 +841,21 @@
             if(!curProj) return;
             let data = rawData.filter(x => x['โครงการ'] === curProj);
             let title = "", grouped = {}, backBtn = document.getElementById(backBtnId);
-            if(state.scope === 'year') { title = "รายปี"; backBtn.style.display='none'; data.forEach(r => { let y=r['วันที่'].split('/')[2]; grouped[y]=(grouped[y]||0)+parse(r[valKey]); }); }
-            else if(state.scope === 'month') { title = "ปี "+state.year; backBtn.style.display='inline-flex'; data = data.filter(r => r['วันที่'].split('/')[2] == state.year); data.forEach(r => { let m=parseInt(r['วันที่'].split('/')[1]); grouped[MONTHS[m-1]]=(grouped[MONTHS[m-1]]||0)+parse(r[valKey]); }); }
-            else if(state.scope === 'day') { title = "เดือน "+state.month; backBtn.style.display='inline-flex'; let mIdx = MONTHS.indexOf(state.month)+1; data = data.filter(r => r['วันที่'].split('/')[2] == state.year && parseInt(r['วันที่'].split('/')[1]) == mIdx); data.forEach(r => { let d=parseInt(r['วันที่'].split('/')[0]); grouped[d]=(grouped[d]||0)+parse(r[valKey]); }); }
+            
+            if(state.scope === 'year') { 
+                title = "รายปี"; backBtn.style.display='none'; 
+                data.forEach(r => { let dt=toDate(r['วันที่']); if(dt>0){ let y=dt.getFullYear(); grouped[y]=(grouped[y]||0)+parse(r[valKey]); }});
+            } else if(state.scope === 'month') { 
+                title = "ปี "+state.year; backBtn.style.display='inline-flex'; 
+                data = data.filter(r => toDate(r['วันที่']).getFullYear() == state.year); 
+                data.forEach(r => { let m=toDate(r['วันที่']).getMonth(); grouped[MONTHS[m]]=(grouped[MONTHS[m]]||0)+parse(r[valKey]); }); 
+            } else if(state.scope === 'day') { 
+                title = "เดือน "+state.month; backBtn.style.display='inline-flex'; 
+                let mIdx = MONTHS.indexOf(state.month); 
+                data = data.filter(r => { let dt=toDate(r['วันที่']); return dt.getFullYear() == state.year && dt.getMonth() == mIdx; }); 
+                data.forEach(r => { let d=toDate(r['วันที่']).getDate(); grouped[d]=(grouped[d]||0)+parse(r[valKey]); }); 
+            }
+
             let labels = Object.keys(grouped).sort((a,b)=>{ if(state.scope==='month') return MONTHS.indexOf(a)-MONTHS.indexOf(b); return a-b; });
             document.getElementById(titleId).innerText = `${type==='fuel'?'น้ำมัน':'ซ่อมบำรุง'} (${title})`;
             setTimeout(() => { drawChart(canvasId, 'bar', null, valKey, color, false, {labels, data:labels.map(l=>grouped[l])}, (e,el) => {
@@ -776,17 +879,17 @@
 
             if(state.scope === 'year') {
                 title="รายปี"; backBtn.style.display='none';
-                data.forEach(r => { let y=r['วันที่'].split('/')[2]; grouped[y]=(grouped[y]||0)+parse(r[valKey]); });
+                data.forEach(r => { let dt=toDate(r['วันที่']); if(dt>0){ let y=dt.getFullYear(); grouped[y]=(grouped[y]||0)+parse(r[valKey]); } });
                 detailData = data;
             } else if(state.scope === 'month') {
                 title="ปี "+state.year; backBtn.style.display='inline-flex';
-                detailData = data.filter(r => r['วันที่'].split('/')[2] == state.year);
-                detailData.forEach(r => { let m=parseInt(r['วันที่'].split('/')[1]); grouped[MONTHS[m-1]]=(grouped[MONTHS[m-1]]||0)+parse(r[valKey]); });
+                detailData = data.filter(r => toDate(r['วันที่']).getFullYear() == state.year);
+                detailData.forEach(r => { let m=toDate(r['วันที่']).getMonth(); grouped[MONTHS[m]]=(grouped[MONTHS[m]]||0)+parse(r[valKey]); });
             } else if(state.scope === 'day') {
                 title="เดือน "+state.month; backBtn.style.display='inline-flex';
-                let mIdx = MONTHS.indexOf(state.month)+1;
-                detailData = data.filter(r => r['วันที่'].split('/')[2] == state.year && parseInt(r['วันที่'].split('/')[1]) == mIdx);
-                detailData.forEach(r => { let d=parseInt(r['วันที่'].split('/')[0]); grouped[d]=(grouped[d]||0)+parse(r[valKey]); });
+                let mIdx = MONTHS.indexOf(state.month);
+                detailData = data.filter(r => { let dt=toDate(r['วันที่']); return dt.getFullYear() == state.year && dt.getMonth() == mIdx; });
+                detailData.forEach(r => { let d=toDate(r['วันที่']).getDate(); grouped[d]=(grouped[d]||0)+parse(r[valKey]); });
             }
 
             document.getElementById(`${type}-charts-area`).style.display = 'grid';
@@ -803,7 +906,14 @@
                         else {
                             let m = MONTHS.indexOf(state.month)+1;
                             let dStr = `${l.toString().padStart(2,'0')}/${m.toString().padStart(2,'0')}/${state.year}`;
-                            showDetailList(type, data.filter(x=>x['วันที่']===dStr), dStr);
+                            // This depends on toDate logic matching exactly. 
+                            // Safer to filter by date object comparison or just exact string match if possible, 
+                            // but let's stick to list display logic.
+                            let targetDate = new Date(state.year, m-1, l);
+                            showDetailList(type, data.filter(x=>{ 
+                                let d=toDate(x['วันที่']); 
+                                return d.getFullYear()===targetDate.getFullYear() && d.getMonth()===targetDate.getMonth() && d.getDate()===targetDate.getDate();
+                            }), dStr);
                             return;
                         }
                         type==='fuel'?renderFuelPage():renderRepairPage();
@@ -845,10 +955,15 @@
             else {
                 let h='';
                 repeatList.forEach((x,i) => {
+                    // Fix: Escape quotes for HTML attribute to prevent syntax errors
+                    let safeId = x.id.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    let safeItem = x.item.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    
+                    // --- CHANGED: Passing x.d2 (Previous Date) instead of x.d1 (Latest Date) ---
                     h += `<div class="repair-alert-item">
                         <div style="font-weight:bold; display:flex; justify-content:space-between;"><span>${x.id}</span> <span>${x.item}</span></div>
                         <div style="font-size:0.9rem; color:#666; margin-top:5px;">ล่าสุด: ${x.d1} <br><span style="color:red">ก่อนหน้า: ${x.d2}</span></div>
-                        <button class="ra-btn" onclick="checkOff('${x.id}','${x.d1}','${x.item}', this)">✅ รับทราบ (ตรวจสอบแล้ว)</button>
+                        <button class="ra-btn" onclick="checkOff('${safeId}','${x.d2}','${safeItem}', this)">✅ รับทราบ (ตรวจสอบแล้ว)</button>
                     </div>`;
                 });
                 div.innerHTML = h;
@@ -873,7 +988,8 @@
             list.forEach(r => {
                 let v = parse(type==='fuel'?r['ปริมาณ(ลิตร)']:r['ค่าใช้จ่าย']);
                 let d = type==='fuel' ? (r['โครงการ']||'-') : `${r.item||'-'} ${r.place?`[${r.place.trim()}]`:''}`;
-                let click = type==='repair' && r.place ? `onclick="goToShop('${r.place.trim()}')" style="cursor:pointer;"` : '';
+                let placeName = r.place ? r.place.trim().replace(/'/g, "\\'") : '';
+                let click = type==='repair' && r.place ? `onclick="goToShop('${placeName}')" style="cursor:pointer;"` : '';
                 h += `<div class="item-card" ${click}><div class="item-card-left"><i class="fas ${icon} item-icon" style="color:${color};"></i><div><div style="font-weight:bold">${r['วันที่']}</div><div style="font-size:0.85rem;color:#666">${d}</div></div></div><div style="font-weight:bold;color:${color};font-size:1.1rem;">${v.toLocaleString()}</div></div>`;
             });
             document.getElementById('h-content').innerHTML = h || 'ไม่มีข้อมูล';
