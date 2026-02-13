@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* --- CORE STYLES --- */
+        /* --- VARIABLES --- */
         :root {
             --primary: #4f46e5;
             --bg-color: #f3f4f6;
@@ -31,7 +31,6 @@
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease-out; }
         .spinner { width: 50px; height: 50px; border: 5px solid #e5e7eb; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        
         .fade-in { animation: fadeIn 0.5s forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -41,8 +40,8 @@
         .nav-btn:hover { background: #eef2ff; color: var(--primary); }
         .nav-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
 
-        /* --- LAYOUT --- */
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: none; } /* Hidden initially */
+        /* --- CONTAINER --- */
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: none; } 
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeIn 0.4s ease-out; }
         h2.page-title { text-align: center; margin-bottom: 30px; font-weight: 700; color: var(--text-main); }
@@ -60,11 +59,12 @@
 
         .c-blue { --color: #3b82f6; --bg: #eff6ff; } .c-orange { --color: #f59e0b; --bg: #fffbeb; }
         .c-green { --color: #10b981; --bg: #ecfdf5; } .c-red { --color: #ef4444; --bg: #fef2f2; }
-        .c-purple { --color: #8b5cf6; --bg: #f3e8ff; }
+        .c-purple { --color: #8b5cf6; --bg: #f3e8ff; } .c-cyan { --color: #06b6d4; --bg: #ecfeff; }
+        .c-indigo { --color: #6366f1; --bg: #e0e7ff; }
 
         /* --- CONTROLS --- */
         .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .controls-group { display: flex; gap: 10px; align-items: center; }
+        .controls-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .custom-select { padding: 8px 15px; border-radius: 50px; border: 1px solid #e5e7eb; font-family: 'Prompt', sans-serif; cursor: pointer; background: white; }
         .btn-back { padding: 8px 15px; border-radius: 50px; border: 1px solid #e5e7eb; background: white; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: 'Prompt', sans-serif; transition: 0.2s; }
         .btn-back:hover { background: #f9fafb; color: var(--primary); border-color: var(--primary); }
@@ -75,24 +75,32 @@
         /* --- CHARTS & LISTS --- */
         .charts-wrapper { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
         @media (max-width: 900px) { .charts-wrapper { grid-template-columns: 1fr; } }
+        
         .chart-box { background: white; border-radius: 20px; padding: 20px; height: 350px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
-        .list-box { background: white; border-radius: 20px; padding: 15px; height: 350px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .list-box { background: white; border-radius: 20px; padding: 15px; height: 350px; overflow-y: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         .chart-internal-title { text-align: center; font-size: 1rem; color: var(--text-muted); font-weight: 600; margin-bottom: 15px; border-bottom: 1px solid #f3f4f6; padding-bottom: 10px; }
 
+        /* Fixed Top 10 List Container */
+        .top10-list-container { flex: 1; overflow-y: auto; }
         .top10-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; align-items: center; }
         .top10-item:hover { background: #f8fafc; padding-left: 15px; }
         .top10-rank { font-weight: bold; color: #cbd5e1; width: 25px; }
 
-        /* Card List Standard */
+        /* Card List */
         .card-list { display: flex; flex-direction: column; gap: 10px; }
-        .item-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; }
+        .item-card { background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; }
         .item-card:hover { transform: translateX(3px); border-color: #cbd5e1; }
         .item-card-left { display: flex; align-items: center; gap: 15px; }
         .item-icon { font-size: 1.5rem; opacity: 0.5; }
 
-        /* --- VEHICLE DETAIL --- */
+        /* Info Card */
+        .info-card-list { display: flex; flex-direction: column; gap: 12px; }
+        .info-card { background: white; border-radius: 16px; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; border-left: 6px solid transparent; transition: all 0.2s; cursor: pointer; }
+        .info-card:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        
+        /* Vehicle Detail */
         .vehicle-view { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; display: none; }
-        .vv-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .vv-header { display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;}
         .vv-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
         .vv-stat { display: flex; flex-direction: column; }
         .vv-stat label { font-size: 0.85rem; color: #64748b; display: block; }
@@ -103,7 +111,7 @@
         .vv-title-group { display: flex; align-items: center; gap: 15px; }
         .vv-icon-box { width: 60px; height: 60px; background: #eef2ff; color: var(--primary); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
 
-        /* --- MODAL --- */
+        /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-box { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative; animation: slideUp 0.3s; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -119,238 +127,119 @@
 
         .calc-box { background: white; padding: 30px; border-radius: 20px; max-width: 400px; margin: 0 auto; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-family: 'Prompt'; box-sizing: border-box; }
-        
-        /* Info Cards */
-        .info-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
-        .info-card { background: white; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid transparent; transition: 0.2s; }
-        .info-card:hover { transform: translateY(-3px); box-shadow: 0 5px 10px rgba(0,0,0,0.1); }
-        
         .summary-box { text-align: right; margin-bottom: 10px; font-size: 1.1rem; color: #666; }
         .summary-val { font-weight: 700; font-size: 1.4rem; }
+        .project-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid #e5e7eb; box-shadow: var(--shadow-sm); cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .project-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-color: var(--primary); }
 
-        /* Status Colors */
         .status-danger { border-left-color: var(--danger) !important; }
         .status-warn { border-left-color: var(--warning) !important; }
         .status-ok { border-left-color: var(--success) !important; }
-        .text-danger { color: var(--danger); font-weight: bold; }
-        .text-warn { color: var(--warning); font-weight: bold; }
-        .text-ok { color: var(--success); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <!-- LOADER -->
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-        <p style="margin-top: 15px; color: #666;">กำลังเชื่อมต่อฐานข้อมูล...</p>
-    </div>
+    <div id="loading-overlay"><div class="spinner"></div><p style="margin-top: 15px; color: #666;">กำลังเชื่อมต่อฐานข้อมูล...</p></div>
 
-    <!-- NAVBAR -->
     <nav class="navbar" id="main-navbar" style="display:none;">
         <button class="nav-btn active" onclick="nav('home')"><i class="fas fa-home"></i> หน้าหลัก</button>
         <button class="nav-btn" onclick="nav('info')"><i class="fas fa-truck"></i> ข้อมูลรถ</button>
+        <button class="nav-btn" onclick="nav('projects')"><i class="fas fa-project-diagram"></i> โครงการ</button>
+        <button class="nav-btn" onclick="nav('shops')"><i class="fas fa-store"></i> อู่/ร้านซ่อม</button>
         <button class="nav-btn" onclick="nav('fuel')"><i class="fas fa-gas-pump"></i> น้ำมัน</button>
         <button class="nav-btn" onclick="nav('repair')"><i class="fas fa-tools"></i> ซ่อมบำรุง</button>
         <button class="nav-btn" onclick="nav('alerts')"><i class="fas fa-bell"></i> แจ้งเตือน</button>
         <button class="nav-btn" onclick="nav('calc')" style="color: #8b5cf6;"><i class="fas fa-calculator"></i> คำนวณ</button>
     </nav>
 
-    <!-- CONTAINER -->
     <div class="container" id="main-container">
-
-        <!-- 1. DASHBOARD -->
+        <!-- DASHBOARD -->
         <div id="page-home" class="page-section active">
             <h2 class="page-title">ภาพรวมสถานะเครื่องจักร</h2>
             <div class="dashboard-grid">
-                <div class="menu-card c-blue" onclick="nav('info')">
-                    <div><h3>จำนวนเครื่องจักร</h3><div class="stat" id="dash-cars">0</div><div class="desc">รายการทะเบียนทั้งหมด</div></div>
-                    <div class="icon-box"><i class="fas fa-truck"></i></div><i class="fas fa-truck bg-icon"></i>
-                </div>
-                <div class="menu-card c-orange" onclick="nav('fuel')">
-                    <div><h3>น้ำมันรวม</h3><div class="stat" id="dash-fuel">0</div><div class="desc">ลิตร (สะสม)</div></div>
-                    <div class="icon-box"><i class="fas fa-gas-pump"></i></div><i class="fas fa-gas-pump bg-icon"></i>
-                </div>
-                <div class="menu-card c-green" onclick="nav('repair')">
-                    <div><h3>ค่าซ่อมรวม</h3><div class="stat" id="dash-repair">0</div><div class="desc">บาท (สะสม)</div></div>
-                    <div class="icon-box"><i class="fas fa-tools"></i></div><i class="fas fa-tools bg-icon"></i>
-                </div>
-                <div class="menu-card c-red" onclick="nav('alerts')">
-                    <div><h3>แจ้งเตือนภาษี</h3>
-                        <div class="alert-row"><span style="color:var(--danger)">ขาด <span id="dash-exp">0</span></span> / <span style="color:var(--warning)">ใกล้ <span id="dash-near">0</span></span></div>
-                        <div class="desc">กดเพื่อจัดการ</div>
-                    </div>
-                    <div class="icon-box"><i class="fas fa-bell"></i></div><i class="fas fa-bell bg-icon"></i>
-                </div>
-                <!-- REPEAT CARD -->
-                <div class="menu-card c-red" style="--color:var(--danger); --bg:#fef2f2;" onclick="openRepeatModal()">
-                    <div><h3>ซ่อมซ้ำ (90 วัน)</h3><div class="stat" id="dash-repeat" style="color:var(--danger)">0</div><div class="desc">รายการที่ต้องตรวจสอบ</div></div>
-                    <div class="icon-box"><i class="fas fa-exclamation-triangle"></i></div><i class="fas fa-exclamation-triangle bg-icon"></i>
-                </div>
-                <div class="menu-card c-purple" onclick="nav('calc')">
-                    <div><h3>เครื่องมือ</h3><div class="stat" style="font-size:1.5rem">Prorate</div><div class="desc">คำนวณค่าใช้จ่าย</div></div>
-                    <div class="icon-box"><i class="fas fa-calculator"></i></div><i class="fas fa-calculator bg-icon"></i>
-                </div>
+                <div class="menu-card c-blue" onclick="nav('info')"><div><h3>จำนวนเครื่องจักร</h3><div class="stat" id="dash-cars">0</div><div class="desc">รายการทะเบียนทั้งหมด</div></div><div class="icon-box"><i class="fas fa-truck"></i></div><i class="fas fa-truck bg-icon"></i></div>
+                <div class="menu-card c-indigo" onclick="nav('projects')"><div><h3>โครงการทั้งหมด</h3><div class="stat" id="dash-projects">0</div><div class="desc">สรุปภาพรวมโครงการ</div></div><div class="icon-box"><i class="fas fa-project-diagram"></i></div><i class="fas fa-project-diagram bg-icon"></i></div>
+                <div class="menu-card c-orange" onclick="nav('fuel')"><div><h3>น้ำมันรวม</h3><div class="stat" id="dash-fuel">0</div><div class="desc">ลิตร (สะสม)</div></div><div class="icon-box"><i class="fas fa-gas-pump"></i></div><i class="fas fa-gas-pump bg-icon"></i></div>
+                <div class="menu-card c-green" onclick="nav('repair')"><div><h3>ค่าซ่อมรวม</h3><div class="stat" id="dash-repair">0</div><div class="desc">บาท (สะสม)</div></div><div class="icon-box"><i class="fas fa-tools"></i></div><i class="fas fa-tools bg-icon"></i></div>
+                <div class="menu-card c-cyan" onclick="nav('shops')"><div><h3>รายชื่อร้าน/อู่</h3><div class="stat" id="dash-shops">0</div><div class="desc">สถานที่ซื้อ/ซ่อมบำรุง</div></div><div class="icon-box"><i class="fas fa-store"></i></div><i class="fas fa-store bg-icon"></i></div>
+                <div class="menu-card c-red" onclick="nav('alerts')"><div><h3>แจ้งเตือนภาษี</h3><div class="alert-row"><span style="color:var(--danger)">ขาด <span id="dash-exp">0</span></span> / <span style="color:var(--warning)">ใกล้ <span id="dash-near">0</span></span></div><div class="desc">กดเพื่อจัดการ</div></div><div class="icon-box"><i class="fas fa-bell"></i></div><i class="fas fa-bell bg-icon"></i></div>
+                <div class="menu-card c-red" style="--color:var(--danger); --bg:#fef2f2;" onclick="openRepeatModal()"><div><h3>ซ่อมซ้ำ (90 วัน)</h3><div class="stat" id="dash-repeat" style="color:var(--danger)">0</div><div class="desc">รายการที่ต้องตรวจสอบ</div></div><div class="icon-box"><i class="fas fa-exclamation-triangle"></i></div><i class="fas fa-exclamation-triangle bg-icon"></i></div>
+                <div class="menu-card c-purple" onclick="nav('calc')"><div><h3>เครื่องมือ</h3><div class="stat" style="font-size:1.5rem">Prorate</div><div class="desc">คำนวณค่าใช้จ่าย</div></div><div class="icon-box"><i class="fas fa-calculator"></i></div><i class="fas fa-calculator bg-icon"></i></div>
             </div>
         </div>
 
-        <!-- 2. INFO -->
+        <!-- INFO -->
         <div id="page-info" class="page-section">
             <div id="info-list-view">
-                <div class="filter-bar">
-                    <h2 style="margin:0">ข้อมูลรถ</h2>
-                    <input type="text" id="search-info" class="search-input" placeholder="ค้นหาทะเบียน/รหัส..." onkeyup="filterInfo(this.value)">
-                </div>
-                <div id="info-grid" class="info-card-grid"></div>
+                <div class="filter-bar"><h2 style="margin:0">ข้อมูลรถ</h2><input type="text" id="search-info" class="search-input" placeholder="ค้นหาทะเบียน..." onkeyup="filterInfo(this.value)"></div>
+                <div id="info-grid" class="info-card-list"></div>
             </div>
             <div id="info-detail-view" class="vehicle-view">
-                <div class="vv-header">
-                    <div><h2 id="vv-id" style="margin:0; color:var(--primary)">-</h2><span id="vv-plate" style="color:#666">-</span></div>
-                    <button class="btn-back" onclick="closeInfoDetail()"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button>
-                </div>
-                <div class="vv-info-grid">
-                    <div class="vv-stat"><label>ยี่ห้อ</label><span id="vv-brand">-</span></div>
-                    <div class="vv-stat"><label>ประเภท</label><span id="vv-type">-</span></div>
-                    <div class="vv-stat"><label>ภาษีหมดอายุ</label><span id="vv-tax">-</span></div>
-                </div>
-                <div class="vv-actions">
-                    <button class="btn-back" style="background:#fff7ed; color:#d97706;" onclick="openHistory('fuel')">ประวัติน้ำมัน</button>
-                    <button class="btn-back" style="background:#f0fdf4; color:#059669;" onclick="openHistory('repair')">ประวัติซ่อม</button>
-                </div>
-                <div class="vv-charts">
-                    <div class="chart-box" style="display:flex; flex-direction:column;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <div class="chart-internal-title" id="info-fuel-title" style="margin:0; color:#f59e0b; border:none; padding-bottom:0;">สถิติน้ำมัน (รายปี)</div>
-                            <button class="btn-back" id="info-fuel-back" onclick="infoFuelUp()" style="display:none; padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button>
-                        </div>
-                        <div style="flex-grow:1; position:relative;"><canvas id="infoChartFuel"></canvas></div>
-                    </div>
-                    <div class="chart-box" style="display:flex; flex-direction:column;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <div class="chart-internal-title" id="info-repair-title" style="margin:0; color:#10b981; border:none; padding-bottom:0;">สถิติซ่อมบำรุง (รายปี)</div>
-                            <button class="btn-back" id="info-repair-back" onclick="infoRepairUp()" style="display:none; padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button>
-                        </div>
-                        <div style="flex-grow:1; position:relative;"><canvas id="infoChartRepair"></canvas></div>
-                    </div>
-                </div>
+                <div class="vv-header"><div><h2 id="vv-id" style="margin:0; color:var(--primary)">-</h2><span id="vv-plate" style="color:#666">-</span></div><button class="btn-back" onclick="closeInfoDetail()"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button></div>
+                <div class="vv-info-grid"><div class="vv-stat"><label>ยี่ห้อ</label><span id="vv-brand">-</span></div><div class="vv-stat"><label>ประเภท</label><span id="vv-type">-</span></div><div class="vv-stat"><label>ภาษีหมดอายุ</label><span id="vv-tax">-</span></div></div>
+                <div class="vv-actions"><button class="btn-back" style="background:#fff7ed; color:#d97706;" onclick="openHistory('fuel')">ประวัติน้ำมัน</button><button class="btn-back" style="background:#f0fdf4; color:#059669;" onclick="openHistory('repair')">ประวัติซ่อม</button></div>
+                <div class="vv-charts"><div class="chart-box" style="display:flex; flex-direction:column;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><div class="chart-internal-title" id="info-fuel-title" style="margin:0; color:#f59e0b; border:none; padding-bottom:0;">สถิติน้ำมัน (รายปี)</div><button class="btn-back" id="info-fuel-back" onclick="infoFuelUp()" style="display:none; padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button></div><div style="flex-grow:1; position:relative;"><canvas id="infoChartFuel"></canvas></div></div><div class="chart-box" style="display:flex; flex-direction:column;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><div class="chart-internal-title" id="info-repair-title" style="margin:0; color:#10b981; border:none; padding-bottom:0;">สถิติซ่อมบำรุง (รายปี)</div><button class="btn-back" id="info-repair-back" onclick="infoRepairUp()" style="display:none; padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button></div><div style="flex-grow:1; position:relative;"><canvas id="infoChartRepair"></canvas></div></div></div>
             </div>
         </div>
 
-        <!-- 3. FUEL -->
+        <!-- PROJECTS -->
+        <div id="page-projects" class="page-section">
+            <div id="projects-list-view"><div class="filter-bar"><h2 style="margin:0; color:var(--primary)">โครงการทั้งหมด</h2><div></div></div><div id="projects-grid" class="info-card-list"></div></div>
+            <div id="projects-detail-view" class="vehicle-view">
+                 <div class="vv-header"><div class="vv-title-group"><div class="vv-icon-box"><i class="fas fa-project-diagram"></i></div><div><h2 id="pd-name" style="margin:0; color:var(--primary)">-</h2><span style="color:#666">รายละเอียดโครงการ</span></div></div><button class="btn-back" onclick="closeProjectDetail()"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button></div>
+                <div class="vv-info-grid" style="grid-template-columns: 1fr 1fr;"><div class="vv-stat"><label>น้ำมันรวม (ลิตร)</label><span id="pd-fuel" style="color:#f59e0b">-</span></div><div class="vv-stat"><label>ค่าซ่อมรวม (บาท)</label><span id="pd-repair" style="color:#10b981">-</span></div></div>
+                <h3 style="margin:20px 0 10px 0; color:#333;">แนวโน้มค่าใช้จ่ายตลอดโครงการ</h3>
+                <div class="chart-box" style="height:400px;"><canvas id="projectChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- SHOPS -->
+        <div id="page-shops" class="page-section">
+            <div id="shops-list-view"><div class="filter-bar"><h2 style="margin:0; color:#06b6d4;">รายชื่ออู่/ร้านซ่อม</h2><input type="text" id="search-shop" class="search-input" placeholder="ค้นหาร้าน..." onkeyup="filterShops(this.value)"></div><div id="shops-grid" class="info-card-list"></div></div>
+            <div id="shops-detail-view" class="vehicle-view">
+                <div class="vv-header"><div class="vv-title-group"><div class="vv-icon-box" style="background:#ecfeff; color:#06b6d4;"><i class="fas fa-store"></i></div><div><h2 id="sd-name" style="margin:0; color:#06b6d4">-</h2><span id="sd-phone" style="color:#666; font-weight:bold;">-</span></div></div><button class="btn-back" onclick="closeShopDetail()"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button></div>
+                <div class="filter-bar" style="background:#f8fafc; padding:15px; border-radius:15px;"><div class="controls-group" style="width:100%;"><input type="text" id="sd-search-car" class="search-input" placeholder="ค้นหารหัสรถ..." onkeyup="filterShopRecords()" style="flex-grow:1;"><input type="month" id="sd-search-month" class="custom-select" onchange="filterShopRecords()"><button class="btn-back" onclick="document.getElementById('sd-search-car').value=''; document.getElementById('sd-search-month').value=''; filterShopRecords();">ล้างตัวกรอง</button></div></div>
+                <div class="summary-box">ยอดรวม (ตามตัวกรอง): <span id="sd-sum" class="summary-val" style="color:#06b6d4">0</span> บาท</div>
+                <div id="shop-records-list" class="card-list" style="margin-top:15px; max-height:500px; overflow-y:auto; padding-right:5px;"></div>
+            </div>
+        </div>
+
+        <!-- FUEL -->
         <div id="page-fuel" class="page-section">
-            <div class="filter-bar">
-                <h2 style="margin:0">สถิติน้ำมัน</h2>
-                <div class="controls-group">
-                    <select id="fuel-filter" class="custom-select" onchange="renderFuelPage()"><option value="all">ทุกโครงการ</option></select>
-                    <button id="fuel-up-btn" class="btn-back" style="display:none" onclick="fuelUp()">กลับ</button>
-                </div>
-            </div>
-            <div class="summary-box">รวม: <span id="fuel-sum" class="summary-val" style="color:var(--primary)">0</span> ลิตร</div>
-            <div id="fuel-charts-area" class="charts-wrapper">
-                <div class="chart-box"><div id="fuel-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><canvas id="chartFuel"></canvas></div>
-                <div class="list-box"><div class="chart-internal-title">Top 10 (ลิตร)</div><div id="fuel-top10" class="top10-list-container"></div></div>
-            </div>
+            <div class="filter-bar"><h2 style="margin:0; color:#f59e0b;">สถิติน้ำมัน</h2><div class="controls-group"><select id="fuel-filter" class="custom-select" onchange="renderFuelPage()"><option value="all">ทุกโครงการ</option></select><button id="fuel-up-btn" class="btn-back" style="display:none" onclick="fuelUp()">กลับ</button></div></div>
+            <div class="summary-box">รวม: <span id="fuel-sum" class="summary-val" style="color:#f59e0b">0</span> ลิตร</div>
+            <div id="fuel-charts-area" class="charts-wrapper"><div class="chart-box"><div id="fuel-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><canvas id="chartFuel"></canvas></div><div class="list-box"><div class="chart-internal-title">Top 10 (ลิตร)</div><div id="fuel-top10" class="top10-list-container"></div></div></div>
             <div id="fuel-details" class="card-list" style="margin-top:20px; display:none;"></div>
-            <!-- Vehicle Detail inside Fuel Page -->
-            <div id="fuel-vehicle-detail" class="vehicle-view">
-                <div class="vv-header">
-                    <div><h2 id="fuel-vv-id" style="margin:0; color:var(--primary)">-</h2><span id="fuel-vv-plate" style="color:#666">-</span></div>
-                    <button class="btn-back" onclick="goToInfo(currentFuelCarId)">ดูข้อมูลรถคันนี้</button>
-                </div>
-                <div class="chart-box"><canvas id="fuelVehicleChart"></canvas></div>
-            </div>
+            <div id="fuel-vehicle-detail" class="vehicle-view"><div class="vv-header"><div><h2 id="fuel-vv-id" style="margin:0; color:var(--primary)">-</h2><span id="fuel-vv-plate" style="color:#666">-</span></div><button class="btn-back" onclick="goToInfo(currentFuelCarId)">ดูข้อมูลรถคันนี้</button></div><div class="chart-box"><canvas id="fuelVehicleChart"></canvas></div></div>
         </div>
 
-        <!-- 4. REPAIR -->
+        <!-- REPAIR -->
         <div id="page-repair" class="page-section">
-            <div class="filter-bar">
-                <h2 style="margin:0">สถิติซ่อมบำรุง</h2>
-                <div class="controls-group">
-                    <button id="btn-repair-alert" class="alert-badge-btn repair-alert-btn" onclick="openRepeatModal()"><i class="fas fa-exclamation-triangle"></i> ซ้ำ <span id="badge-count">0</span></button>
-                    <select id="repair-filter" class="custom-select" onchange="renderRepairPage()"><option value="all">ทุกโครงการ</option></select>
-                    <button id="repair-up-btn" class="btn-back" style="display:none" onclick="repairUp()">กลับ</button>
-                </div>
-            </div>
-            <div class="summary-box">รวม: <span id="repair-sum" class="summary-val" style="color:var(--success)">0</span> บาท</div>
-            <div id="repair-charts-area" class="charts-wrapper">
-                <div class="chart-box"><div id="repair-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><canvas id="chartRepair"></canvas></div>
-                <div class="list-box"><div class="chart-internal-title">Top 10 (บาท)</div><div id="repair-top10" class="top10-list-container"></div></div>
-            </div>
+            <div class="filter-bar"><h2 style="margin:0; color:#10b981;">สถิติซ่อมบำรุง</h2><div class="controls-group"><button id="btn-repair-alert" class="alert-badge-btn repair-alert-btn" onclick="openRepeatModal()"><i class="fas fa-exclamation-triangle"></i> ซ้ำ <span id="badge-count">0</span></button><select id="repair-filter" class="custom-select" onchange="renderRepairPage()"><option value="all">ทุกโครงการ</option></select><button id="repair-up-btn" class="btn-back" style="display:none" onclick="repairUp()">กลับ</button></div></div>
+            <div class="summary-box">รวม: <span id="repair-sum" class="summary-val" style="color:#10b981">0</span> บาท</div>
+            <div id="repair-charts-area" class="charts-wrapper"><div class="chart-box"><div id="repair-chart-title" class="chart-internal-title">ภาพรวมรายปี</div><canvas id="chartRepair"></canvas></div><div class="list-box"><div class="chart-internal-title">Top 10 (บาท)</div><div id="repair-top10" class="top10-list-container"></div></div></div>
             <div id="repair-details" class="card-list" style="margin-top:20px; display:none;"></div>
-            <!-- Vehicle Detail inside Repair Page -->
-            <div id="repair-vehicle-detail" class="vehicle-view">
-                 <div class="vv-header">
-                    <div><h2 id="repair-vv-id" style="margin:0; color:#10b981">-</h2><span id="repair-vv-plate" style="color:#666">-</span></div>
-                    <button class="btn-back" onclick="goToInfo(currentRepairCarId)">ดูข้อมูลรถคันนี้</button>
-                </div>
-                <div class="chart-box"><canvas id="repairVehicleChart"></canvas></div>
-            </div>
+            <div id="repair-vehicle-detail" class="vehicle-view"><div class="vv-header"><div><h2 id="repair-vv-id" style="margin:0; color:#10b981">-</h2><span id="repair-vv-plate" style="color:#666">-</span></div><button class="btn-back" onclick="goToInfo(currentRepairCarId)">ดูข้อมูลรถคันนี้</button></div><div class="chart-box"><canvas id="repairVehicleChart"></canvas></div></div>
         </div>
 
-        <!-- 5. ALERTS -->
+        <!-- ALERTS -->
         <div id="page-alerts" class="page-section">
-            <div class="filter-bar">
-                <h2 style="margin:0">จัดการข้อมูล</h2>
-                <div class="controls-group">
-                    <input type="text" id="search-alerts" class="search-input" placeholder="ค้นหาทะเบียน/รหัส..." onkeyup="filterAlerts(this.value)">
-                    <button class="btn-primary" onclick="openEditModal()">+ เพิ่มรถ</button>
-                </div>
-            </div>
-            <div class="list-box" style="height:auto; min-height:500px;">
-                <table style="width:100%; border-collapse:collapse;" id="table-alerts">
-                    <thead style="background:#f9fafb;"><tr style="text-align:left;"><th style="padding:12px;">รหัส</th><th>ทะเบียน</th><th>ภาษี</th><th>แก้ไข</th></tr></thead>
-                    <tbody id="alert-list"></tbody>
-                </table>
-            </div>
+            <div class="filter-bar"><h2 style="margin:0">จัดการข้อมูล</h2><div class="controls-group"><input type="text" id="search-alerts" class="search-input" placeholder="ค้นหา..." onkeyup="filterAlerts(this.value)"><button class="btn-primary" onclick="openEditModal()">+ เพิ่มรถ</button></div></div>
+            <div class="list-box" style="height:auto; min-height:500px;"><table style="width:100%; border-collapse:collapse;" id="table-alerts"><thead style="background:#f9fafb;"><tr style="text-align:left;"><th style="padding:12px;">รหัส</th><th>ทะเบียน</th><th>ภาษี</th><th>แก้ไข</th></tr></thead><tbody id="alert-list"></tbody></table></div>
         </div>
 
-        <!-- 6. CALC -->
+        <!-- CALC -->
         <div id="page-calc" class="page-section">
             <h2 class="page-title">เครื่องมือคำนวณ Prorate</h2>
-            <div class="calc-box">
-                <label>วันที่เริ่ม</label><input type="date" id="cal-start" class="form-control">
-                <label>ยอดรวม</label><input type="number" id="cal-amount" class="form-control" placeholder="0.00">
-                <button class="btn-primary" style="margin-top:15px;" onclick="doCalc()">คำนวณ</button>
-                <div id="cal-res" style="margin-top:20px; display:none; border-top:1px dashed #ccc; padding-top:10px;">
-                    <p>ปี 1: <strong id="res-1"></strong></p><p>ปี 2: <strong id="res-2"></strong></p>
-                </div>
-            </div>
+            <div class="calc-box"><label>วันที่เริ่ม</label><input type="date" id="cal-start" class="form-control"><label>ยอดรวม</label><input type="number" id="cal-amount" class="form-control" placeholder="0.00"><button class="btn-primary" style="margin-top:15px;" onclick="doCalc()">คำนวณ</button><div id="cal-res" style="margin-top:20px; display:none; border-top:1px dashed #ccc; padding-top:10px;"><p>ปี 1: <strong id="res-1"></strong></p><p>ปี 2: <strong id="res-2"></strong></p></div></div>
         </div>
 
     </div>
 
     <!-- MODALS -->
-    <div id="historyModal" class="modal">
-        <div class="modal-box">
-            <span class="modal-close" onclick="closeModal('historyModal')">&times;</span>
-            <h3 id="h-title" style="margin-top:0;">ประวัติ</h3>
-            <div id="h-content" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;"></div>
-        </div>
-    </div>
-    
-    <div id="repeatModal" class="modal">
-        <div class="modal-box">
-            <span class="modal-close" onclick="closeModal('repeatModal')">&times;</span>
-            <h3 style="color:var(--danger); margin-top:0;">รายการซ่อมซ้ำ (90 วัน)</h3>
-            <div id="r-content" style="margin-top:15px;"></div>
-        </div>
-    </div>
-    
-    <div id="editModal" class="modal">
-        <div class="modal-box">
-            <span class="modal-close" onclick="closeModal('editModal')">&times;</span>
-            <h3 id="ed-title" style="margin-top:0;">จัดการข้อมูล</h3>
-            <form onsubmit="event.preventDefault(); saveCar();">
-                <input id="ed-id" class="form-control" placeholder="รหัสรถ" required>
-                <input id="ed-plate" class="form-control" placeholder="ทะเบียน">
-                <input id="ed-brand" class="form-control" placeholder="ยี่ห้อ" list="dl-brand">
-                <input id="ed-type" class="form-control" placeholder="ประเภท" list="dl-type">
-                <input id="ed-tax" class="form-control" placeholder="วันหมดภาษี (DD/MM/YYYY)">
-                <button type="submit" class="btn-primary" id="btn-save">บันทึก</button>
-                <button type="button" id="btn-del" class="btn-primary" style="background:#fee2e2; color:red; margin-top:10px;" onclick="delCar()">ลบ</button>
-            </form>
-            <datalist id="dl-brand"></datalist><datalist id="dl-type"></datalist>
-        </div>
-    </div>
+    <div id="historyModal" class="modal"><div class="modal-box"><span class="modal-close" onclick="closeModal('historyModal')">&times;</span><h3 id="h-title" style="margin-top:0;">ประวัติ</h3><div id="h-content" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;"></div></div></div>
+    <div id="repeatModal" class="modal"><div class="modal-box"><span class="modal-close" onclick="closeModal('repeatModal')">&times;</span><h3 style="color:var(--danger); margin-top:0;">รายการซ่อมซ้ำ (90 วัน)</h3><div id="r-content" style="margin-top:15px;"></div></div></div>
+    <div id="editModal" class="modal"><div class="modal-box"><span class="modal-close" onclick="closeModal('editModal')">&times;</span><h3 id="ed-title" style="margin-top:0;">จัดการข้อมูล</h3><form onsubmit="event.preventDefault(); saveCar();"><label>รหัสรถ</label><input id="ed-id" class="form-control" required><label>ทะเบียน</label><input id="ed-plate" class="form-control"><label>ยี่ห้อ</label><input id="ed-brand" class="form-control" list="dl-brand"><label>ประเภท</label><input id="ed-type" class="form-control" list="dl-type"><label>วันหมดภาษี</label><input id="ed-tax" class="form-control" placeholder="DD/MM/YYYY"><div style="display:flex; gap:10px; margin-top:15px;"><button type="button" id="btn-del" class="btn-primary" style="background:#fee2e2; color:red; display:none;" onclick="delCar()">ลบ</button><button type="submit" class="btn-primary" id="btn-save" style="flex-grow:1; justify-content:center;">บันทึก</button></div></form><datalist id="dl-brand"></datalist><datalist id="dl-type"></datalist></div></div>
 
     <script>
         // CONFIG
@@ -361,144 +250,37 @@
         const MONTHS = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 
         // STATE
-        let dInfo=[], dFuel=[], dRepair=[];
+        let dInfo=[], dFuel=[], dRepair=[], dShops={}, dProjects={};
         let charts={};
         let sFuel={scope:'year', year:null, month:null}, sRepair={scope:'year', year:null, month:null};
         let sInfoFuel={scope:'year', year:null, month:null}, sInfoRepair={scope:'year', year:null, month:null};
-        let curCar=null, repeatList=[], currentFuelCarId=null, currentRepairCarId=null;
-
-        // HELPER FUNCTIONS (Declared first)
-        function parse(v) { return parseFloat((String(v)||'0').replace(/,/g,'')) || 0; }
+        let curCar=null, curShop=null, curProj=null, repeatList=[], currentFuelCarId=null, currentRepairCarId=null;
         
-        function toDate(s) { 
-            if(!s) return new Date(0); 
-            let p=s.split('/'); 
-            if(p.length===3) return new Date(p[2], p[1]-1, p[0]); // DD/MM/YYYY
-            return new Date(0);
-        }
+        // LAZY LOAD FLAGS
+        let pagesLoaded = { home: true, info: false, shops: false, fuel: false, repair: false, alerts: false, calc: false };
 
-        function checkDate(s) {
-            if(!s) return 'ok';
-            let diff = Math.ceil((toDate(s)-new Date())/86400000);
-            if(diff<0) return 'exp'; if(diff<30) return 'near'; return 'ok';
-        }
-
-        function formatTax(s) {
-            let st = checkDate(s);
-            let color = st=='exp'?'#ef4444' : (st=='near'?'#f59e0b':'#10b981');
-            return `<span style="color:${color}; font-weight:bold">${s||'-'}</span>`;
-        }
-
-        function destroyChart(id) {
-            if(charts[id]) { charts[id].destroy(); charts[id]=null; }
-        }
-
+        // --- HELPER FUNCTIONS ---
+        function parse(v) { return parseFloat((String(v)||'0').replace(/,/g,'')) || 0; }
+        function toDate(s) { if(!s) return new Date(0); let p=s.split('/'); if(p.length===3) return new Date(p[2], p[1]-1, p[0]); return new Date(0); }
+        function checkDate(s) { if(!s) return 'ok'; let diff = Math.ceil((toDate(s)-new Date())/86400000); if(diff<0) return 'exp'; if(diff<30) return 'near'; return 'ok'; }
+        function formatTax(s) { let st = checkDate(s); let color = st=='exp'?'#ef4444':(st=='near'?'#f59e0b':'#10b981'); return `<span style="color:${color}; font-weight:bold">${s||'-'}</span>`; }
+        function destroyChart(id) { if(charts[id]) { charts[id].destroy(); charts[id]=null; } }
+        
         function drawChart(id, type, data, key, color, isMini, customData, onClick) {
-            let canvas = document.getElementById(id);
-            if(!canvas) return;
-            let ctx = canvas.getContext('2d');
-            destroyChart(id);
-
+            let canvas = document.getElementById(id); if(!canvas) return; let ctx = canvas.getContext('2d'); destroyChart(id);
             let chartData;
-            if(customData) {
-                chartData = customData;
-            } else {
-                let g={};
-                data.forEach(r => { 
-                    let p=r['วันที่'].split('/'); 
-                    if(p.length===3) { let k=p[1]+'/'+p[2]; g[k]=(g[k]||0)+parse(r[key]); }
-                });
-                let lbl = Object.keys(g).sort((a,b)=>{ let x=a.split('/'), y=b.split('/'); return (x[1]-y[1])||(x[0]-y[0]); }).slice(-12);
+            if(customData) chartData = customData;
+            else {
+                let g={}; data.forEach(r => { let p=r['วันที่'].split('/'); if(p.length===3) { let k=p[1]+'/'+p[2]; g[k]=(g[k]||0)+parse(r[key]); }});
+                let lbl = Object.keys(g).sort((a,b)=>{ let x=a.split('/'), y=b.split('/'); return (x[1]-y[1])||(x[0]-y[0]); });
+                if(isMini) lbl = lbl.slice(-12);
                 chartData = { labels:lbl, data:lbl.map(k=>g[k]) };
             }
-
-            charts[id] = new Chart(ctx, {
-                type: type,
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        label: 'รวม', data: chartData.data,
-                        backgroundColor: color, borderColor: color,
-                        fill: type==='line', tension:0.3, borderRadius:4
-                    }]
-                },
-                options: {
-                    responsive:true, maintainAspectRatio:false,
-                    plugins:{legend:{display:false}},
-                    onClick: onClick
-                }
-            });
+            charts[id] = new Chart(ctx, { type: type, data: { labels: chartData.labels, datasets: [{ label: 'รวม', data: chartData.data, backgroundColor: color, borderColor: color, fill: type==='line', tension:0.3, borderRadius:4 }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, onClick: onClick } });
         }
 
-        function renderTop10List(type, data) {
-            let map={}, valKey = type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย';
-            let color = type==='fuel'?'#f59e0b':'#10b981';
-            data.forEach(r => map[r['รหัสรถ']]=(map[r['รหัสรถ']]||0)+parse(r[valKey]));
-            let sorted = Object.keys(map).sort((a,b)=>map[b]-map[a]).slice(0,10);
-            let h = '';
-            sorted.forEach((id,i) => {
-                h += `<div class="top10-item" onclick="openPageVehicle('${type}','${id}')">
-                    <span class="top10-rank">${i+1}</span>
-                    <span class="top10-id">${id}</span>
-                    <span class="top10-vol" style="color:${color}">${map[id].toLocaleString()}</span>
-                </div>`;
-            });
-            let cont = document.getElementById(type+'-top10');
-            if(cont) cont.innerHTML = h || '<div style="text-align:center;padding:20px;color:#ccc">ไม่มีข้อมูล</div>';
-        }
-
-        function renderInfoCards(val='') {
-            let div = document.getElementById('info-grid');
-            if(!div) return;
-            div.innerHTML = '';
-            let term = val.toLowerCase();
-            dInfo.forEach(c => {
-                let cid = c.id || ''; let cpl = c.plate || '';
-                if(term && !cid.toLowerCase().includes(term) && !cpl.toLowerCase().includes(term)) return;
-                
-                let st = checkDate(c.tax);
-                let color = st=='exp'?'var(--danger)' : (st=='near'?'var(--warning)':'var(--success)');
-                
-                div.innerHTML += `
-                <div class="info-card" style="border-left:5px solid ${color}" onclick="viewCar('${c.id}')">
-                    <div class="item-card-left">
-                        <div class="icon-box" style="width:40px;height:40px;font-size:1.2rem;background:${color}20;color:${color};border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-truck"></i></div>
-                        <div><div style="font-weight:bold">${c.id}</div><div style="font-size:0.85rem;color:#666">${c.plate}</div></div>
-                    </div>
-                    <div style="text-align:right"><div style="font-size:0.8rem;color:#999">ภาษี</div><div style="font-weight:600;color:${color}">${c.tax||'-'}</div></div>
-                </div>`;
-            });
-        }
-        
-        window.filterInfo = (val) => { renderInfoCards(val); };
-
-        function renderAlertsTable(filter) {
-            let tb = document.getElementById('alert-list');
-            if(!tb) return;
-            tb.innerHTML = '';
-            dInfo.forEach(c => {
-                let st = checkDate(c.tax);
-                let show = (filter==='all') || (filter==='expired' && st==='exp') || (filter==='near' && st==='near');
-                if(show && st!=='ok') {
-                    let color = st==='exp'?'red':'orange';
-                    tb.innerHTML += `<tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:10px;">${c.id}</td><td>${c.plate}</td>
-                        <td style="color:${color}; font-weight:bold;">${c.tax||'-'}</td>
-                        <td><button class="btn-back" onclick="openEdit('${c.id}')" style="padding:5px 10px"><i class="fas fa-edit"></i></button></td>
-                    </tr>`;
-                }
-            });
-        }
-
-        window.filterAlerts = (query) => {
-            query = query.toLowerCase();
-            const rows = document.querySelectorAll('#alert-list tr');
-            rows.forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
-            });
-        };
-
-        function updateDashboardStats() {
+        // --- DASHBOARD FUNCTIONS ---
+        function updateDash() {
             document.getElementById('dash-cars').innerText = dInfo.length;
             document.getElementById('dash-fuel').innerText = dFuel.reduce((a,b)=>a+parse(b['ปริมาณ(ลิตร)']),0).toLocaleString();
             document.getElementById('dash-repair').innerText = dRepair.reduce((a,b)=>a+parse(b['ค่าใช้จ่าย']),0).toLocaleString();
@@ -508,432 +290,216 @@
             document.getElementById('dash-exp').innerText = exp;
             document.getElementById('dash-near').innerText = near;
             
+            // Extract Shops & Projects
+            dShops = {}; dProjects = {};
+            dRepair.forEach(r => {
+                let p = (r.place || '').trim();
+                if(p) { if(!dShops[p]) dShops[p] = { phone: '', count: 0, total: 0 }; dShops[p].count++; dShops[p].total += parse(r['ค่าใช้จ่าย']); if(r.phone && r.phone.trim()!=='') dShops[p].phone = r.phone.trim(); }
+                let proj = r['โครงการ'] || 'ไม่ระบุ';
+                if(!dProjects[proj]) dProjects[proj] = { fuel:0, repair:0 };
+                dProjects[proj].repair += parse(r['ค่าใช้จ่าย']);
+            });
+            dFuel.forEach(r => {
+                let proj = r['โครงการ'] || 'ไม่ระบุ';
+                if(!dProjects[proj]) dProjects[proj] = { fuel:0, repair:0 };
+                dProjects[proj].fuel += parse(r['ปริมาณ(ลิตร)']);
+            });
+            document.getElementById('dash-shops').innerText = Object.keys(dShops).length;
+            document.getElementById('dash-projects').innerText = Object.keys(dProjects).length;
             checkRepeat();
         }
 
         function checkRepeat() {
-             repeatList = [];
-             let map = {};
-             dRepair.forEach(r => {
-                 if(r.checked!=='เช็คแล้ว' && r['รหัสรถ']) {
-                     if(!map[r['รหัสรถ']]) map[r['รหัสรถ']]=[];
-                     map[r['รหัสรถ']].push(r);
-                 }
-             });
+             repeatList = []; let map = {};
+             dRepair.forEach(r => { if(r.checked!=='เช็คแล้ว' && r['รหัสรถ']) { if(!map[r['รหัสรถ']]) map[r['รหัสรถ']]=[]; map[r['รหัสรถ']].push(r); } });
              for(let id in map) {
                  let list = map[id].sort((a,b)=>toDate(b['วันที่'])-toDate(a['วันที่']));
                  for(let i=0; i<list.length; i++) {
                      for(let j=i+1; j<list.length; j++) {
-                         let diff = (toDate(list[i]['วันที่']) - toDate(list[j]['วันที่']))/86400000;
-                         if(diff > 90) break;
-                         let item1 = (list[i].item||'').trim();
-                         let item2 = (list[j].item||'').trim();
+                         if( (toDate(list[i]['วันที่']) - toDate(list[j]['วันที่']))/86400000 > 90 ) break;
+                         let item1 = (list[i].item||'').trim(); let item2 = (list[j].item||'').trim();
                          if(item1 && item1===item2) repeatList.push({id:id, item:item1, d1:list[i]['วันที่'], d2:list[j]['วันที่']});
                      }
                  }
              }
              document.getElementById('dash-repeat').innerText = repeatList.length;
-             document.getElementById('badge-count').innerText = repeatList.length;
-             document.getElementById('btn-repair-alert').style.display = repeatList.length>0?'inline-flex':'none';
-        }
-        
-        function populateDatalist() {
-            let b=new Set(), t=new Set();
-            dInfo.forEach(x=>{ if(x.brand) b.add(x.brand); if(x.type) t.add(x.type); });
-            document.getElementById('dl-brand').innerHTML = [...b].map(x=>`<option>${x}`).join('');
-            document.getElementById('dl-type').innerHTML = [...t].map(x=>`<option>${x}`).join('');
         }
 
-        function populateFilters() {
-            let pf = new Set(), pr = new Set();
-            dFuel.forEach(x=>{if(x['โครงการ']) pf.add(x['โครงการ'])});
-            dRepair.forEach(x=>{if(x['โครงการ']) pr.add(x['โครงการ'])});
-            let sf = document.getElementById('fuel-filter'), sr = document.getElementById('repair-filter');
-            if(sf) { sf.innerHTML='<option value="all">ทุกโครงการ</option>'; pf.forEach(p => sf.innerHTML+=`<option value="${p}">${p}</option>`); }
-            if(sr) { sr.innerHTML='<option value="all">ทุกโครงการ</option>'; pr.forEach(p => sr.innerHTML+=`<option value="${p}">${p}</option>`); }
+        // --- INFO PAGE ---
+        function renderInfoCards(val='') {
+            let div = document.getElementById('info-grid'); if(!div) return; div.innerHTML = '';
+            let term = val.toLowerCase();
+            dInfo.forEach(c => {
+                let cid = c.id || ''; let cpl = c.plate || '';
+                if(term && !cid.toLowerCase().includes(term) && !cpl.toLowerCase().includes(term)) return;
+                let st = checkDate(c.tax);
+                let color = st=='exp'?'var(--danger)' : (st=='near'?'var(--warning)':'var(--success)');
+                div.innerHTML += `<div class="info-card" style="border-left:5px solid ${color}" onclick="viewCar('${c.id}')"><div class="item-card-left"><div class="icon-box" style="width:40px;height:40px;font-size:1.2rem;background:${color}20;color:${color};border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-truck"></i></div><div><div style="font-weight:bold">${c.id}</div><div style="font-size:0.85rem;color:#666">${c.plate}</div></div></div><div style="text-align:right"><div style="font-size:0.8rem;color:#999">ภาษี</div><div style="font-weight:600;color:${color}">${c.tax||'-'}</div></div></div>`;
+            });
         }
+        window.filterInfo = (val) => { renderInfoCards(val); };
 
-        // --- DATA LOADERS ---
-        async function loadInfo() {
-            try {
-                if(GAS_URL) {
-                    let r = await fetch(GAS_URL);
-                    let d = await r.json();
-                    dInfo = d.map(x=>({id:x.id, plate:x.plate, brand:x.brand, type:x.type, tax:x.tax_expire}));
-                } else throw 'No GAS';
-            } catch(e) {
-                let r = await fetch(INFO_CSV);
-                let t = await r.text();
-                let p = Papa.parse(t, {header:true}).data;
-                dInfo = p.filter(x=>x['รหัส']).map(x=>({id:x['รหัส'], plate:x['ทะเบียน'], brand:x['ยี่ห้อรถ'], type:x['ประเภทรถ'], tax:x['วันที่ทะเบียนขาด']}));
-            }
-        }
-        async function loadFuel() {
-            let r = await fetch(FUEL_CSV); let t = await r.text();
-            dFuel = Papa.parse(t, {header:true}).data.filter(x=>x['วันที่']);
-        }
-        async function loadRepair() {
-            let r = await fetch(REPAIR_CSV); let t = await r.text();
-            dRepair = Papa.parse(t, {header:true}).data.filter(x=>x['วันที่']).map(x=>({...x, item:x['รายการซ่อม/เปลี่ยน'], checked:x['ตรวจสอบ'], place:x['ซื้อ/ซ่อมที่']}));
-        }
-
-        // --- INIT ---
-        window.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('cal-start').value = new Date().toISOString().split('T')[0];
-            
-            try {
-                await Promise.allSettled([loadInfo(), loadFuel(), loadRepair()]);
-                // Process Data AFTER Load
-                populateDatalist();
-                populateFilters();
-                updateDashboardStats();
-                renderInfoCards();
-                renderAlertsTable('all');
-                renderFuelPage();
-                renderRepairPage();
-
-            } catch(e) { console.error(e); }
-
-            document.getElementById('loading-overlay').style.opacity = '0';
-            setTimeout(()=>{
-                document.getElementById('loading-overlay').style.display='none';
-                document.getElementById('main-navbar').style.display='flex';
-                document.getElementById('main-container').style.display='block';
-                document.getElementById('main-container').classList.add('fade-in');
-            }, 500);
-        });
-
-        // --- NAVIGATION ---
-        window.nav = (page) => { showSection(page); }
-        function showSection(id) {
-            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(`page-${id}`).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            
-            const btns = document.querySelectorAll('.nav-btn');
-            if(id==='home') { btns[0].classList.add('active'); updateDashboardStats(); }
-            if(id==='info') { btns[1].classList.add('active'); renderInfoCards(document.getElementById('search-info') ? document.getElementById('search-info').value : ''); }
-            if(id==='fuel') { btns[2].classList.add('active'); renderFuelPage(); }
-            if(id==='repair') { btns[3].classList.add('active'); renderRepairPage(); }
-            if(id==='alerts') { btns[4].classList.add('active'); renderAlertsTable('all'); }
-            if(id==='calc') { btns[5].classList.add('active'); }
-        }
-
-        // --- INFO PAGE LOGIC ---
         window.viewCar = (id) => {
             curCar = dInfo.find(x=>x.id===id);
-            document.getElementById('info-list-view').style.display='none';
-            document.getElementById('info-detail-view').style.display='block';
-            
-            document.getElementById('vv-id').innerText = curCar.id;
-            document.getElementById('vv-plate').innerText = curCar.plate;
-            document.getElementById('vv-brand').innerText = curCar.brand;
-            document.getElementById('vv-type').innerText = curCar.type;
+            document.getElementById('info-list-view').style.display='none'; document.getElementById('info-detail-view').style.display='block';
+            document.getElementById('vv-id').innerText = curCar.id; document.getElementById('vv-plate').innerText = curCar.plate;
+            document.getElementById('vv-brand').innerText = curCar.brand; document.getElementById('vv-type').innerText = curCar.type;
             document.getElementById('vv-tax').innerHTML = formatTax(curCar.tax);
-            
-            sInfoFuel = {scope:'year', year:null, month:null};
-            sInfoRepair = {scope:'year', year:null, month:null};
-
+            sInfoFuel = {scope:'year', year:null, month:null}; sInfoRepair = {scope:'year', year:null, month:null};
             renderInfoChart('fuel', sInfoFuel, dFuel, 'ปริมาณ(ลิตร)', '#f59e0b', 'infoChartFuel', 'info-fuel-title', 'info-fuel-back');
             renderInfoChart('repair', sInfoRepair, dRepair, 'ค่าใช้จ่าย', '#10b981', 'infoChartRepair', 'info-repair-title', 'info-repair-back');
         };
-
         function renderInfoChart(type, state, rawData, valKey, color, canvasId, titleId, backBtnId) {
             if(!curCar) return;
             let data = rawData.filter(x => x['รหัสรถ']?.trim() === curCar.id?.trim());
             let title = "", grouped = {}, backBtn = document.getElementById(backBtnId);
-
-            if(state.scope === 'year') {
-                title = "รายปี"; backBtn.style.display='none';
-                data.forEach(r => { let y=r['วันที่'].split('/')[2]; grouped[y]=(grouped[y]||0)+parse(r[valKey]); });
-            } else if(state.scope === 'month') {
-                title = "ปี "+state.year; backBtn.style.display='inline-flex';
-                data = data.filter(r => r['วันที่'].split('/')[2] == state.year);
-                data.forEach(r => { let m=parseInt(r['วันที่'].split('/')[1]); grouped[MONTHS[m-1]]=(grouped[MONTHS[m-1]]||0)+parse(r[valKey]); });
-            } else if(state.scope === 'day') {
-                title = "เดือน "+state.month; backBtn.style.display='inline-flex';
-                let mIdx = MONTHS.indexOf(state.month)+1;
-                data = data.filter(r => r['วันที่'].split('/')[2] == state.year && parseInt(r['วันที่'].split('/')[1]) == mIdx);
-                data.forEach(r => { let d=parseInt(r['วันที่'].split('/')[0]); grouped[d]=(grouped[d]||0)+parse(r[valKey]); });
-            }
-
+            if(state.scope === 'year') { title = "รายปี"; backBtn.style.display='none'; data.forEach(r => { let y=r['วันที่'].split('/')[2]; grouped[y]=(grouped[y]||0)+parse(r[valKey]); }); }
+            else if(state.scope === 'month') { title = "ปี "+state.year; backBtn.style.display='inline-flex'; data = data.filter(r => r['วันที่'].split('/')[2] == state.year); data.forEach(r => { let m=parseInt(r['วันที่'].split('/')[1]); grouped[MONTHS[m-1]]=(grouped[MONTHS[m-1]]||0)+parse(r[valKey]); }); }
+            else if(state.scope === 'day') { title = "เดือน "+state.month; backBtn.style.display='inline-flex'; let mIdx = MONTHS.indexOf(state.month)+1; data = data.filter(r => r['วันที่'].split('/')[2] == state.year && parseInt(r['วันที่'].split('/')[1]) == mIdx); data.forEach(r => { let d=parseInt(r['วันที่'].split('/')[0]); grouped[d]=(grouped[d]||0)+parse(r[valKey]); }); }
             let labels = Object.keys(grouped).sort((a,b)=>{ if(state.scope==='month') return MONTHS.indexOf(a)-MONTHS.indexOf(b); return a-b; });
-            
             document.getElementById(titleId).innerText = `สถิติ${type==='fuel'?'น้ำมัน':'ซ่อมบำรุง'} (${title})`;
-
-            setTimeout(() => {
-                drawChart(canvasId, 'bar', null, valKey, color, false, {labels, data:labels.map(l=>grouped[l])}, (e,el) => {
-                    if(el.length>0) {
-                        let l = labels[el[0].index];
-                        if(state.scope==='year') { state.scope='month'; state.year=l; }
-                        else if(state.scope==='month') { state.scope='day'; state.month=l; }
-                        else return;
-
-                        if(type === 'fuel') renderInfoChart('fuel', sInfoFuel, dFuel, 'ปริมาณ(ลิตร)', '#f59e0b', 'infoChartFuel', 'info-fuel-title', 'info-fuel-back');
-                        else renderInfoChart('repair', sInfoRepair, dRepair, 'ค่าใช้จ่าย', '#10b981', 'infoChartRepair', 'info-repair-title', 'info-repair-back');
-                    }
-                });
+            setTimeout(() => { drawChart(canvasId, 'bar', null, valKey, color, false, {labels, data:labels.map(l=>grouped[l])}, (e,el) => {
+                    if(el.length>0) { let l = labels[el[0].index]; if(state.scope==='year') { state.scope='month'; state.year=l; } else if(state.scope==='month') { state.scope='day'; state.month=l; } else return;
+                        if(type === 'fuel') renderInfoChart('fuel', sInfoFuel, dFuel, 'ปริมาณ(ลิตร)', '#f59e0b', 'infoChartFuel', 'info-fuel-title', 'info-fuel-back'); else renderInfoChart('repair', sInfoRepair, dRepair, 'ค่าใช้จ่าย', '#10b981', 'infoChartRepair', 'info-repair-title', 'info-repair-back'); } });
             }, 10);
         }
+        window.infoFuelUp = () => { if(sInfoFuel.scope=='day') sInfoFuel.scope='month'; else sInfoFuel.scope='year'; renderInfoChart('fuel', sInfoFuel, dFuel, 'ปริมาณ(ลิตร)', '#f59e0b', 'infoChartFuel', 'info-fuel-title', 'info-fuel-back'); };
+        window.infoRepairUp = () => { if(sInfoRepair.scope=='day') sInfoRepair.scope='month'; else sInfoRepair.scope='year'; renderInfoChart('repair', sInfoRepair, dRepair, 'ค่าใช้จ่าย', '#10b981', 'infoChartRepair', 'info-repair-title', 'info-repair-back'); };
+        window.closeInfoDetail = () => { document.getElementById('info-detail-view').style.display='none'; document.getElementById('info-list-view').style.display='block'; };
 
-        window.infoFuelUp = () => { 
-            if(sInfoFuel.scope=='day') sInfoFuel.scope='month'; else sInfoFuel.scope='year'; 
-            renderInfoChart('fuel', sInfoFuel, dFuel, 'ปริมาณ(ลิตร)', '#f59e0b', 'infoChartFuel', 'info-fuel-title', 'info-fuel-back'); 
+        // --- PROJECTS ---
+        function renderProjectsList() {
+            let div = document.getElementById('projects-grid'); div.innerHTML = '';
+            Object.keys(dProjects).sort().forEach(name => {
+                let p = dProjects[name];
+                div.innerHTML += `<div class="project-card" onclick="openProjectDetail('${name}')"><div style="display:flex;align-items:center;gap:15px;"><div class="icon-box" style="width:45px;height:45px;background:#e0e7ff;color:var(--primary);font-size:1.2rem;display:flex;justify-content:center;align-items:center;border-radius:10px;"><i class="fas fa-folder"></i></div><div style="font-weight:bold;font-size:1.1rem;color:#333;">${name}</div></div><div style="text-align:right;"><div style="font-size:0.85rem;color:#666;">น้ำมัน: <span style="color:#f59e0b;font-weight:600;">${p.fuel.toLocaleString()}</span> ลิตร</div><div style="font-size:0.85rem;color:#666;">ซ่อม: <span style="color:#10b981;font-weight:600;">${p.repair.toLocaleString()}</span> บ.</div></div></div>`;
+            });
+        }
+        window.openProjectDetail = (name) => { curProj=name; document.getElementById('projects-list-view').style.display='none'; document.getElementById('projects-detail-view').style.display='block'; document.getElementById('pd-name').innerText=name; document.getElementById('pd-fuel').innerText=dProjects[name].fuel.toLocaleString(); document.getElementById('pd-repair').innerText=dProjects[name].repair.toLocaleString(); let data=dRepair.filter(r=>r['โครงการ']===name); let g={}; data.forEach(r=>{ let p=r['วันที่'].split('/'); if(p.length===3) { let k=p[1]+'/'+p[2]; g[k]=(g[k]||0)+parse(r['ค่าใช้จ่าย']); } }); let lbl=Object.keys(g).sort((a,b)=>{ let x=a.split('/'), y=b.split('/'); return (x[1]-y[1])||(x[0]-y[0]); }); new Chart(document.getElementById('projectChart'), {type:'line', data:{labels:lbl, datasets:[{label:'ค่าซ่อม (บาท)', data:lbl.map(k=>g[k]), borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3}]}, options:{responsive:true, maintainAspectRatio:false}}); };
+        window.closeProjectDetail = () => { document.getElementById('projects-detail-view').style.display='none'; document.getElementById('projects-list-view').style.display='block'; };
+
+        // --- SHOPS ---
+        window.renderShopsList = (val='') => {
+            let div = document.getElementById('shops-grid'); div.innerHTML=''; let term=val.toLowerCase();
+            Object.keys(dShops).sort().forEach(name => { if(term && !name.toLowerCase().includes(term)) return; let s=dShops[name]; div.innerHTML += `<div class="info-card" style="border-left:5px solid #06b6d4" onclick="openShopDetail('${name}')"><div class="item-card-left"><div class="icon-box" style="width:45px;height:45px;font-size:1.2rem;background:#ecfeff;color:#06b6d4;border-radius:12px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-store"></i></div><div><div style="font-weight:bold">${name}</div><div style="font-size:0.85rem;color:#666"><i class="fas fa-phone"></i> ${s.phone||'ไม่มีเบอร์'}</div></div></div><div style="text-align:right"><div style="font-size:0.8rem;color:#999">${s.count} รายการ</div><div style="font-weight:600;color:#06b6d4">${s.total.toLocaleString()} บ.</div></div></div>`; });
         };
-        window.infoRepairUp = () => { 
-            if(sInfoRepair.scope=='day') sInfoRepair.scope='month'; else sInfoRepair.scope='year'; 
-            renderInfoChart('repair', sInfoRepair, dRepair, 'ค่าใช้จ่าย', '#10b981', 'infoChartRepair', 'info-repair-title', 'info-repair-back'); 
+        window.filterShops = (val) => renderShopsList(val);
+        window.openShopDetail = (name) => { curShop=name; document.getElementById('shops-list-view').style.display='none'; document.getElementById('shops-detail-view').style.display='block'; let s=dShops[name]; document.getElementById('sd-name').innerText=name; document.getElementById('sd-phone').innerText=s.phone?`☎️ ${s.phone}`:''; filterShopRecords(); };
+        window.closeShopDetail = () => { document.getElementById('shops-detail-view').style.display='none'; document.getElementById('shops-list-view').style.display='block'; };
+        window.filterShopRecords = () => {
+            let cf = document.getElementById('sd-search-car').value.toLowerCase().trim(); let mf = document.getElementById('sd-search-month').value;
+            let list = dRepair.filter(r => (r.place||'').trim() === curShop);
+            if(cf) list = list.filter(r => (r['รหัสรถ']||'').toLowerCase().includes(cf));
+            if(mf) { let [y, m] = mf.split('-'); list = list.filter(r => { let p=r['วันที่'].split('/'); return p[2]===y && p[1]===m; }); }
+            list.sort((a,b)=>toDate(b['วันที่'])-toDate(a['วันที่']));
+            let div = document.getElementById('shop-records-list'); let h=''; let total=0;
+            list.forEach(r => { let v=parse(r['ค่าใช้จ่าย']); total+=v; h+=`<div class="item-card" onclick="viewCar('${r['รหัสรถ']}')"><div class="item-card-left"><i class="fas fa-tools item-icon" style="color:#06b6d4;"></i><div><div style="font-weight:bold">${r['รหัสรถ']} <span style="font-size:0.8rem;color:#9ca3af;font-weight:normal;">${r['วันที่']}</span></div><div style="font-size:0.85rem;color:#666">${r.item||'-'}</div></div></div><div style="font-weight:bold;color:#06b6d4">${v.toLocaleString()}</div></div>`; });
+            div.innerHTML = h||'<div style="text-align:center;padding:20px;color:#999;">ไม่พบข้อมูล</div>'; document.getElementById('sd-sum').innerText=total.toLocaleString();
         };
 
-        window.closeInfoDetail = () => {
-            document.getElementById('info-detail-view').style.display='none';
-            document.getElementById('info-list-view').style.display='block';
-        };
+        // --- RENDER TOP 10 ---
+        function renderTop10List(type, data) {
+            let map={}, valKey = type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย'; let color = type==='fuel'?'#f59e0b':'#10b981';
+            data.forEach(r => map[r['รหัสรถ']]=(map[r['รหัสรถ']]||0)+parse(r[valKey]));
+            let sorted = Object.keys(map).sort((a,b)=>map[b]-map[a]).slice(0,10);
+            let h = ''; sorted.forEach((id,i) => { h += `<div class="top10-item" onclick="openPageVehicle('${type}','${id}')"><span class="top10-rank">${i+1}</span><span class="top10-id">${id}</span><span class="top10-vol" style="color:${color}">${map[id].toLocaleString()}</span></div>`; });
+            document.getElementById(type+'-top10').innerHTML = h || '<div style="text-align:center;padding:20px;color:#ccc">ไม่มีข้อมูล</div>';
+        }
 
-        // --- FUEL & REPAIR PAGE LOGIC ---
+        // --- FUEL/REPAIR ---
         window.renderFuelPage = () => renderMain('fuel', sFuel, dFuel, 'ปริมาณ(ลิตร)', '#f59e0b', 'bar');
         window.renderRepairPage = () => renderMain('repair', sRepair, dRepair, 'ค่าใช้จ่าย', '#10b981', 'bar');
-
         function renderMain(type, state, raw, valKey, color, chartType) {
             let proj = document.getElementById(`${type}-filter`)?.value || 'all';
             let data = proj!=='all' ? raw.filter(x=>x['โครงการ']===proj) : raw;
             let title = "", grouped = {}, backBtn = document.getElementById(`${type}-up-btn`);
             let detailData = null; 
 
-            // Grouping Logic
-            if(state.scope === 'year') {
-                title="รายปี"; backBtn.style.display='none';
-                data.forEach(r => { let y=r['วันที่'].split('/')[2]; grouped[y]=(grouped[y]||0)+parse(r[valKey]); });
-                detailData = data;
-            } else if(state.scope === 'month') {
-                title="ปี "+state.year; backBtn.style.display='inline-flex';
-                detailData = data.filter(r => r['วันที่'].split('/')[2] == state.year);
-                detailData.forEach(r => { let m=parseInt(r['วันที่'].split('/')[1]); grouped[MONTHS[m-1]]=(grouped[MONTHS[m-1]]||0)+parse(r[valKey]); });
-            } else if(state.scope === 'day') {
-                title="เดือน "+state.month; backBtn.style.display='inline-flex';
-                let mIdx = MONTHS.indexOf(state.month)+1;
-                detailData = data.filter(r => r['วันที่'].split('/')[2] == state.year && parseInt(r['วันที่'].split('/')[1]) == mIdx);
-                detailData.forEach(r => { let d=parseInt(r['วันที่'].split('/')[0]); grouped[d]=(grouped[d]||0)+parse(r[valKey]); });
-            }
+            if(state.scope === 'year') { title="รายปี"; backBtn.style.display='none'; data.forEach(r => { let y=r['วันที่'].split('/')[2]; grouped[y]=(grouped[y]||0)+parse(r[valKey]); }); detailData=data; }
+            else if(state.scope === 'month') { title="ปี "+state.year; backBtn.style.display='inline-flex'; detailData=data.filter(r=>r['วันที่'].split('/')[2]==state.year); detailData.forEach(r => { let m=parseInt(r['วันที่'].split('/')[1]); grouped[MONTHS[m-1]]=(grouped[MONTHS[m-1]]||0)+parse(r[valKey]); }); }
+            else if(state.scope === 'day') { title="เดือน "+state.month; backBtn.style.display='inline-flex'; let mIdx=MONTHS.indexOf(state.month)+1; detailData=data.filter(r=>r['วันที่'].split('/')[2]==state.year && parseInt(r['วันที่'].split('/')[1])==mIdx); detailData.forEach(r => { let d=parseInt(r['วันที่'].split('/')[0]); grouped[d]=(grouped[d]||0)+parse(r[valKey]); }); }
 
-            // View Management
-            document.getElementById(`${type}-charts-area`).style.display = 'grid';
-            document.getElementById(`${type}-details`).style.display = 'none';
-            document.getElementById(`${type}-vehicle-detail`).style.display = 'none';
-
-            // Chart
+            document.getElementById(`${type}-charts-area`).style.display = 'grid'; document.getElementById(`${type}-details`).style.display = 'none'; document.getElementById(`${type}-vehicle-detail`).style.display = 'none';
             let labels = Object.keys(grouped).sort((a,b)=>{ if(state.scope==='month') return MONTHS.indexOf(a)-MONTHS.indexOf(b); return a-b; });
             
-            setTimeout(() => {
-                drawChart(`chart${type==='fuel'?'Fuel':'Repair'}`, chartType, null, valKey, color, false, {labels, data:labels.map(l=>grouped[l])}, (e,el) => {
-                    if(el.length>0) {
-                        let l = labels[el[0].index];
-                        if(state.scope==='year') { state.scope='month'; state.year=l; }
-                        else if(state.scope==='month') { state.scope='day'; state.month=l; }
-                        else {
-                            let m = MONTHS.indexOf(state.month)+1;
-                            let dStr = `${l.toString().padStart(2,'0')}/${m.toString().padStart(2,'0')}/${state.year}`;
-                            showDetailList(type, data.filter(x=>x['วันที่']===dStr), dStr);
-                            return;
-                        }
-                        type==='fuel'?renderFuelPage():renderRepairPage();
-                    }
-                });
-            }, 10);
-
+            setTimeout(() => { drawChart(`chart${type==='fuel'?'Fuel':'Repair'}`, chartType, null, valKey, color, false, {labels, data:labels.map(l=>grouped[l])}, (e,el) => {
+                if(el.length>0) { let l = labels[el[0].index];
+                    if(state.scope==='year') { state.scope='month'; state.year=l; } else if(state.scope==='month') { state.scope='day'; state.month=l; }
+                    else { let m = MONTHS.indexOf(state.month)+1; let dStr = `${l.toString().padStart(2,'0')}/${m.toString().padStart(2,'0')}/${state.year}`; showDetailList(type, data.filter(x=>x['วันที่']===dStr), dStr); return; }
+                    type==='fuel'?renderFuelPage():renderRepairPage(); } }); }, 10);
             document.getElementById(`${type}-chart-title`).innerText = title;
             document.getElementById(`${type}-sum`).innerText = detailData.reduce((a,b)=>a+parse(b[valKey]), 0).toLocaleString();
             renderTop10List(type, detailData);
         }
-        
-        window.fuelUp = () => { if(sFuel.scope=='day') sFuel.scope='month'; else sFuel.scope='year'; renderFuelPage(); };
-        window.repairUp = () => { if(sRepair.scope=='day') sRepair.scope='month'; else sRepair.scope='year'; renderRepairPage(); };
-
         function showDetailList(type, list, dateStr) {
             document.getElementById(`${type}-charts-area`).style.display = 'none';
-            let div = document.getElementById(`${type}-details`);
-            div.style.display = 'flex';
-            let color = type==='fuel'?'#f59e0b':'#10b981';
-            let icon = type==='fuel'?'fa-gas-pump':'fa-tools';
-            let key = type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย';
-            
+            let div = document.getElementById(`${type}-details`); div.style.display = 'flex';
+            let color = type==='fuel'?'#f59e0b':'#10b981'; let icon = type==='fuel'?'fa-gas-pump':'fa-tools'; let key = type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย';
             let h = `<div class="filter-bar" style="margin-bottom:10px;"><button class="btn-back" onclick="render${type==='fuel'?'Fuel':'Repair'}Page()">ย้อนกลับ</button><h3 style="margin:0;">รายการวันที่ ${dateStr}</h3><div></div></div>`;
-            list.forEach(r => {
-                let desc = type==='repair' ? `${r.item||'-'} <span style="color:#94a3b8; font-size:0.75rem;">${r.place ? `[${r.place}]` : ''}</span>` : (r['โครงการ']||'-');
-                h += `<div class="item-card" onclick="openPageVehicle('${type}','${r['รหัสรถ']}')">
-                    <div class="item-card-left"><i class="fas ${icon} item-icon" style="color:${color};"></i><div><div style="font-weight:bold">${r['รหัสรถ']}</div><div style="font-size:0.85rem; color:#666">${desc}</div></div></div>
-                    <div style="font-weight:bold; color:${color}">${parse(r[key]).toLocaleString()}</div>
-                </div>`;
-            });
+            list.forEach(r => { let desc = type==='repair' ? `${r.item||'-'} ${r.place ? `<span style="color:#94a3b8; font-size:0.8rem;">[${r.place}]</span>` : ''}` : (r['โครงการ']||'-'); h += `<div class="item-card" onclick="openPageVehicle('${type}','${r['รหัสรถ']}')"><div class="item-card-left"><i class="fas ${icon} item-icon" style="color:${color};"></i><div><div style="font-weight:bold">${r['รหัสรถ']}</div><div style="font-size:0.85rem; color:#666">${desc}</div></div></div><div style="font-weight:bold; color:${color}">${parse(r[key]).toLocaleString()}</div></div>`; });
             div.innerHTML = h;
         }
-
         window.openPageVehicle = (type, id) => {
             if(type==='fuel') currentFuelCarId=id; else currentRepairCarId=id;
             let car = dInfo.find(c=>c.id===id)||{id:id, plate:'-', brand:'-', type:'-', tax:'-'};
-            
-            document.getElementById(`${type}-charts-area`).style.display = 'none';
-            document.getElementById(`${type}-details`).style.display = 'none';
-            document.getElementById(`${type}-vehicle-detail`).style.display = 'block';
-
-            document.getElementById(`${type}-vv-id`).innerText = id;
-            document.getElementById(`${type}-vv-plate`).innerText = car.plate;
-            
+            document.getElementById(`${type}-charts-area`).style.display = 'none'; document.getElementById(`${type}-details`).style.display = 'none'; document.getElementById(`${type}-vehicle-detail`).style.display = 'block';
+            document.getElementById(`${type}-vv-id`).innerText = id; document.getElementById(`${type}-vv-plate`).innerText = car.plate;
             let data = (type==='fuel'?dFuel:dRepair).filter(x=>x['รหัสรถ']?.trim()===id.trim());
-            let valKey = type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย';
-            let color = type==='fuel'?'#f59e0b':'#10b981';
-            
-            // Scope filter for detail view
-            let state = type==='fuel'?sFuel:sRepair;
-            if(state.scope==='month') data = data.filter(r=>r['วันที่'].split('/')[2]==state.year);
-            if(state.scope==='day') data = data.filter(r=>r['วันที่'].split('/')[2]==state.year && parseInt(r['วันที่'].split('/')[1]) == (MONTHS.indexOf(state.month)+1));
-
-            // Grouping for chart
-            let g={};
-            data.forEach(r => {
-                let p = r['วันที่'].split('/');
-                let k = state.scope==='year' ? p[2] : (state.scope==='month' ? MONTHS[parseInt(p[1])-1] : parseInt(p[0]));
-                g[k] = (g[k]||0) + parse(r[valKey]);
-            });
-            let lbl = Object.keys(g).sort((a,b) => {
-                 if(state.scope==='month') return MONTHS.indexOf(a)-MONTHS.indexOf(b);
-                 return a-b;
-            });
-
-            setTimeout(() => {
-                drawChart(`${type}VehicleChart`, 'bar', null, valKey, color, false, {labels:lbl, data:lbl.map(l=>g[l])});
-            }, 10);
+            let valKey = type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย'; let color = type==='fuel'?'#f59e0b':'#10b981';
+            let state = type==='fuel'?sFuel:sRepair; if(state.scope==='month') data = data.filter(r=>r['วันที่'].split('/')[2]==state.year); if(state.scope==='day') data = data.filter(r=>r['วันที่'].split('/')[2]==state.year && parseInt(r['วันที่'].split('/')[1]) == (MONTHS.indexOf(state.month)+1));
+            let g={}; data.forEach(r => { let p = r['วันที่'].split('/'); let k = state.scope==='year' ? p[2] : (state.scope==='month' ? MONTHS[parseInt(p[1])-1] : parseInt(p[0])); g[k] = (g[k]||0) + parse(r[valKey]); });
+            let lbl = Object.keys(g).sort((a,b) => { if(state.scope==='month') return MONTHS.indexOf(a)-MONTHS.indexOf(b); return a-b; });
+            setTimeout(() => { drawChart(`${type}VehicleChart`, 'bar', null, valKey, color, false, {labels:lbl, data:lbl.map(l=>g[l])}); }, 10);
         };
+        window.goToInfoPageFromDetail = (id) => { nav('info'); viewCar(id); };
+
+        // --- LOADERS ---
+        async function loadInfo() { try { if(GAS_URL) { let r = await fetch(GAS_URL); let d = await r.json(); dInfo = d.map(x=>({id:x.id, plate:x.plate, brand:x.brand, type:x.type, tax:x.tax_expire})); } else throw 'No GAS'; } catch(e) { let r = await fetch(INFO_CSV); let t = await r.text(); let p = Papa.parse(t, {header:true}).data; dInfo = p.filter(x=>x['รหัส']).map(x=>({id:x['รหัส'], plate:x['ทะเบียน'], brand:x['ยี่ห้อรถ'], type:x['ประเภทรถ'], tax:x['วันที่ทะเบียนขาด']})); } }
+        async function loadFuel() { let r = await fetch(FUEL_CSV); let t = await r.text(); dFuel = Papa.parse(t, {header:true}).data.filter(x=>x['วันที่']); }
+        async function loadRepair() { let r = await fetch(REPAIR_CSV); let t = await r.text(); dRepair = Papa.parse(t, {header:true}).data.filter(x=>x['วันที่']).map(x=>({...x, item:x['รายการซ่อม/เปลี่ยน'], checked:x['ตรวจสอบ'], place:x['ซื้อ/ซ่อมที่'], phone:x['เบอร์โทร']})); }
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('cal-start').value = new Date().toISOString().split('T')[0];
+            try { await Promise.allSettled([loadInfo(), loadFuel(), loadRepair()]); populateDatalist(); populateFilters(); updateDash();
+                // Lazy render on init only if active page is specific, else wait for nav click. But we start at home.
+            } catch(e) { console.error(e); }
+            document.getElementById('loading-overlay').style.opacity = '0';
+            setTimeout(()=>{ document.getElementById('loading-overlay').style.display='none'; document.getElementById('main-navbar').style.display='flex'; document.getElementById('main-container').style.display='block'; document.getElementById('main-container').classList.add('fade-in'); }, 500);
+        });
+
+        // --- NAV ---
+        window.nav = (page) => {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`page-${page}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => { if(btn.getAttribute('onclick').includes(page)) btn.classList.add('active'); });
+
+            if(page==='home') { updateDash(); }
+            if(page==='info' && !pagesLoaded.info) { renderInfoCards(); pagesLoaded.info = true; }
+            if(page==='projects' && !pagesLoaded.projects) { renderProjectsList(); pagesLoaded.projects = true; }
+            if(page==='shops' && !pagesLoaded.shops) { renderShopsList(); pagesLoaded.shops = true; }
+            if(page==='fuel') { if(!pagesLoaded.fuel) { renderFuelPage(); pagesLoaded.fuel = true; } else if(charts['chartFuel']) charts['chartFuel'].resize(); }
+            if(page==='repair') { if(!pagesLoaded.repair) { renderRepairPage(); pagesLoaded.repair = true; } else if(charts['chartRepair']) charts['chartRepair'].resize(); }
+            if(page==='alerts' && !pagesLoaded.alerts) { renderAlertsTable('all'); pagesLoaded.alerts = true; }
+        }
+
+        // --- REST ---
+        function populateDatalist() { let b=new Set(), t=new Set(); dInfo.forEach(x=>{ if(x.brand) b.add(x.brand); if(x.type) t.add(x.type); }); document.getElementById('dl-brand').innerHTML = [...b].map(x=>`<option>${x}`).join(''); document.getElementById('dl-type').innerHTML = [...t].map(x=>`<option>${x}`).join(''); }
+        function populateFilters() { let pf = new Set(), pr = new Set(); dFuel.forEach(x=>{if(x['โครงการ']) pf.add(x['โครงการ'])}); dRepair.forEach(x=>{if(x['โครงการ']) pr.add(x['โครงการ'])}); let sf = document.getElementById('fuel-filter'), sr = document.getElementById('repair-filter'); if(sf) { sf.innerHTML='<option value="all">ทุกโครงการ</option>'; pf.forEach(p => sf.innerHTML+=`<option value="${p}">${p}</option>`); } if(sr) { sr.innerHTML='<option value="all">ทุกโครงการ</option>'; pr.forEach(p => sr.innerHTML+=`<option value="${p}">${p}</option>`); } }
+        function renderAlertsTable(filter) { let tb = document.getElementById('alert-list'); if(!tb) return; tb.innerHTML = ''; dInfo.forEach(c => { let st = checkDate(c.tax); let show = (filter==='all') || (filter==='expired' && st==='exp') || (filter==='near' && st==='near'); if(show && st!=='ok') { let color = st==='exp'?'red':'orange'; tb.innerHTML += `<tr style="border-bottom:1px solid #eee;"><td style="padding:10px;">${c.id}</td><td>${c.plate}</td><td style="color:${color}; font-weight:bold;">${c.tax||'-'}</td><td><button class="btn-back" onclick="openEdit('${c.id}')" style="padding:5px 10px"><i class="fas fa-edit"></i></button></td></tr>`; } }); }
+        window.filterAlerts = (q) => { q = q.toLowerCase(); const rows = document.querySelectorAll('#alert-list tr'); rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none'; }); };
         
-        window.goToInfo = (id) => { nav('info'); viewCar(id); };
-
-        // --- MODALS ---
-        window.openRepeatModal = () => {
-            document.getElementById('repeatModal').style.display='flex';
-            let div = document.getElementById('r-content');
-            if(repeatList.length===0) div.innerHTML = "<div style='text-align:center; padding:20px; color:#666;'>ไม่พบรายการซ่อมซ้ำซ้อนใน 90 วัน</div>";
-            else {
-                let h='';
-                repeatList.forEach((x,i) => {
-                    h += `<div class="repair-alert-item">
-                        <div style="font-weight:bold; display:flex; justify-content:space-between;"><span>${x.id}</span> <span>${x.item}</span></div>
-                        <div style="font-size:0.9rem; color:#666; margin-top:5px;">ล่าสุด: ${x.d1} <br><span style="color:var(--danger)">ก่อนหน้า: ${x.d2}</span></div>
-                        <button class="ra-btn" onclick="checkOff('${x.id}','${x.d1}','${x.item}', this)">✅ รับทราบ (ตรวจสอบแล้ว)</button>
-                    </div>`;
-                });
-                div.innerHTML = h;
-            }
-        };
-
-        window.checkOff = async (id, date, item, btn) => {
-            if(!confirm('ยืนยันว่าตรวจสอบแล้ว?')) return;
-            btn.innerText = 'กำลังบันทึก...';
-            btn.style.opacity = '0.7';
-            try { await fetch(GAS_URL, {method:'POST', body:JSON.stringify({action:'checkRepair', carId:id, date:date, item:item})}); } catch(e){}
-            // Update Local
-            let r = dRepair.find(x => x['รหัสรถ']===id && x['วันที่']===date && x.item===item);
-            if(r) r.checked = 'เช็คแล้ว';
-            
-            btn.parentElement.style.display = 'none';
-            updateDashboardStats(); // Refresh dashboard counter
-        };
-
-        // NEW: Styled History Modal List
-        window.openHistory = (type) => {
-            document.getElementById('historyModal').style.display='flex';
-            document.getElementById('h-title').innerText = type==='fuel' ? 'ประวัติน้ำมัน' : 'ประวัติซ่อมบำรุง';
-            
-            let list = (type==='fuel'?dFuel:dRepair).filter(r=>r['รหัสรถ']?.trim()===curCar.id?.trim()).sort((a,b)=>toDate(b['วันที่'])-toDate(a['วันที่']));
-            let h = '';
-            let color = type==='fuel'?'#f59e0b':'#10b981';
-            let icon = type==='fuel'?'fa-gas-pump':'fa-tools';
-            
-            list.forEach(r => {
-                let v = parse(type==='fuel'?r['ปริมาณ(ลิตร)']:r['ค่าใช้จ่าย']);
-                let desc = type==='fuel'?r['โครงการ']: `${r.item||'-'} ${r.place ? `<span style="color:#94a3b8; font-size:0.75rem;">[${r.place}]</span>` : ''}`;
-                h += `<div class="item-card">
-                    <div class="item-card-left">
-                        <i class="fas ${icon} item-icon" style="color:${color};"></i>
-                        <div><div style="font-weight:bold">${r['วันที่']}</div><div style="font-size:0.85rem; color:#666">${desc}</div></div>
-                    </div>
-                    <div style="font-weight:bold; color:${color}; font-size:1.1rem;">${v.toLocaleString()}</div>
-                </div>`;
-            });
-            document.getElementById('h-content').innerHTML = h || '<div style="text-align:center; padding:20px; color:#999;">ไม่มีประวัติข้อมูล</div>';
-        };
-
+        window.openRepeatModal = () => { document.getElementById('repeatModal').style.display='flex'; let div = document.getElementById('r-content'); if(repeatList.length===0) div.innerHTML = "<div style='text-align:center; padding:20px; color:#666;'>ไม่พบรายการซ่อมซ้ำซ้อนใน 90 วัน</div>"; else { let h=''; repeatList.forEach((x,i) => { h += `<div class="repair-alert-item"><div class="ra-header"><span class="ra-car">${x.id}</span> <span class="ra-title">${x.item}</span></div><div class="ra-details"><div class="ra-date-row"><i class="fas fa-history"></i> ครั้งแรก: ${x.d1}</div><div class="ra-date-row" style="color:#ef4444;"><i class="fas fa-exclamation-circle"></i> ซ้ำเมื่อ: ${x.d2} (ห่าง ${x.diff} วัน)</div></div><button class="ra-check-btn" onclick="checkOff('${x.id}','${x.d1}','${x.item}', this)">✅ ตรวจสอบแล้ว</button></div>`; }); div.innerHTML = h; } };
+        window.checkOff = async (id, date, item, btn) => { if(!confirm('ยืนยันว่าตรวจสอบแล้ว?')) return; btn.innerText = 'กำลังบันทึก...'; btn.style.opacity = '0.7'; try { await fetch(GAS_URL, {method:'POST', body:JSON.stringify({action:'checkRepair', carId:id, date:date, item:item})}); } catch(e){} let r = dRepair.find(x => x['รหัสรถ']===id && x['วันที่']===date && x.item===item); if(r) r.checked = 'เช็คแล้ว'; btn.parentElement.style.display = 'none'; updateDash(); };
+        window.openHistory = (type) => { document.getElementById('historyModal').style.display='flex'; document.getElementById('h-title').innerText = type==='fuel' ? 'ประวัติน้ำมัน' : 'ประวัติซ่อมบำรุง'; let list = (type==='fuel'?dFuel:dRepair).filter(r=>r['รหัสรถ']?.trim()===curCar.id?.trim()).sort((a,b)=>toDate(b['วันที่'])-toDate(a['วันที่'])); let h = ''; let color = type==='fuel'?'#f59e0b':'#10b981'; let icon = type==='fuel'?'fa-gas-pump':'fa-tools'; list.forEach(r => { let v = parse(type==='fuel'?r['ปริมาณ(ลิตร)']:r['ค่าใช้จ่าย']); let desc = ''; let clickAttr = ''; let hoverStyle = ''; if (type === 'fuel') { desc = r['โครงการ'] || '-'; } else { let shopName = r.place ? r.place.trim() : ''; desc = `${r.item||'-'} ${shopName ? `<span style="color:#94a3b8; font-size:0.75rem;">[${shopName}]</span>` : ''}`; if (shopName) { clickAttr = `onclick="goToShop('${shopName}')"`; hoverStyle = 'cursor:pointer;'; } } h += `<div class="item-card" ${clickAttr} style="${hoverStyle}"><div class="item-card-left"><i class="fas ${icon} item-icon" style="color:${color};"></i><div><div style="font-weight:bold">${r['วันที่']}</div><div style="font-size:0.85rem; color:#666">${desc}</div></div></div><div style="font-weight:bold; color:${color}; font-size:1.1rem;">${v.toLocaleString()}</div></div>`; }); document.getElementById('h-content').innerHTML = h || '<div style="text-align:center; padding:20px; color:#999;">ไม่มีประวัติข้อมูล</div>'; };
+        window.goToShop = (shopName) => { if(!shopName) return; shopName = shopName.trim(); if(!dShops[shopName]) { alert('ไม่พบข้อมูลร้านค้านี้ในระบบ'); return; } closeModal('historyModal'); nav('shops'); openShopDetail(shopName); };
         window.openEditModal = () => openEdit(null);
-        window.openEdit = (id) => {
-            document.getElementById('editModal').style.display='flex';
-            document.querySelectorAll('#editModal input').forEach(x=>x.value='');
-            document.getElementById('btn-del').style.display='none';
-            document.getElementById('ed-title').innerText = "เพิ่มข้อมูลรถใหม่";
-            document.getElementById('ed-id').disabled = false;
-            
-            if(id) {
-                let c = dInfo.find(x=>x.id===id);
-                if(c) {
-                    document.getElementById('ed-title').innerText = "แก้ไขข้อมูลรถ";
-                    document.getElementById('ed-id').value = c.id;
-                    document.getElementById('ed-id').disabled = true;
-                    document.getElementById('ed-plate').value = c.plate;
-                    document.getElementById('ed-brand').value = c.brand;
-                    document.getElementById('ed-type').value = c.type;
-                    document.getElementById('ed-tax').value = c.tax;
-                    document.getElementById('btn-del').style.display='block';
-                }
-            }
-        };
-
-        window.saveCar = async () => {
-            let p = {
-                action: document.getElementById('ed-id').disabled ? 'update' : 'add',
-                id: document.getElementById('ed-id').value,
-                plate: document.getElementById('ed-plate').value,
-                brand: document.getElementById('ed-brand').value,
-                type: document.getElementById('ed-type').value,
-                tax_expire: document.getElementById('ed-tax').value
-            };
-            if(p.action==='add') dInfo.push(p); else { let c=dInfo.find(x=>x.id===p.id); Object.assign(c,p); }
-            
-            let btn = document.getElementById('btn-save');
-            let oldText = btn.innerText;
-            btn.innerText = 'กำลังบันทึก...';
-            
-            try { await fetch(GAS_URL, {method:'POST', body:JSON.stringify(p)}); } catch(e){}
-            
-            btn.innerText = oldText;
-            closeModal('editModal'); 
-            updateDashboardStats(); 
-            renderInfoCards(); 
-            renderAlertsTable('all');
-        };
-
-        window.delCar = async () => {
-            if(!confirm('ยืนยันการลบข้อมูลรถคันนี้?')) return;
-            let id = document.getElementById('ed-id').value;
-            dInfo = dInfo.filter(x=>x.id!==id);
-            try { await fetch(GAS_URL, {method:'POST', body:JSON.stringify({action:'delete', id:id})}); } catch(e){}
-            closeModal('editModal'); 
-            updateDashboardStats(); 
-            renderInfoCards(); 
-            renderAlertsTable('all');
-        };
-
+        window.openEdit = (id) => { document.getElementById('editModal').style.display='flex'; document.querySelectorAll('#editModal input').forEach(x=>x.value=''); document.getElementById('btn-del').style.display='none'; document.getElementById('ed-title').innerText = "เพิ่มข้อมูลรถใหม่"; document.getElementById('ed-id').disabled = false; if(id) { let c = dInfo.find(x=>x.id===id); if(c) { document.getElementById('ed-title').innerText = "แก้ไขข้อมูลรถ"; document.getElementById('ed-id').value = c.id; document.getElementById('ed-id').disabled = true; document.getElementById('ed-plate').value = c.plate; document.getElementById('ed-brand').value = c.brand; document.getElementById('ed-type').value = c.type; document.getElementById('ed-tax').value = c.tax; document.getElementById('btn-del').style.display='block'; } } };
+        window.saveCar = async () => { let p = { action: document.getElementById('ed-id').disabled ? 'update' : 'add', id: document.getElementById('ed-id').value, plate: document.getElementById('ed-plate').value, brand: document.getElementById('ed-brand').value, type: document.getElementById('ed-type').value, tax_expire: document.getElementById('ed-tax').value }; if(p.action==='add') dInfo.push(p); else { let c=dInfo.find(x=>x.id===p.id); Object.assign(c,p); } let btn = document.getElementById('btn-save'); let oldText = btn.innerText; btn.innerText = 'กำลังบันทึก...'; try { await fetch(GAS_URL, {method:'POST', body:JSON.stringify(p)}); } catch(e){} btn.innerText = oldText; closeModal('editModal'); updateDash(); if(pagesLoaded.info) renderInfoCards(); if(pagesLoaded.alerts) renderAlertsTable('all'); };
+        window.delCar = async () => { if(!confirm('ยืนยันการลบข้อมูลรถคันนี้?')) return; let id = document.getElementById('ed-id').value; dInfo = dInfo.filter(x=>x.id!==id); try { await fetch(GAS_URL, {method:'POST', body:JSON.stringify({action:'delete', id:id})}); } catch(e){} closeModal('editModal'); updateDash(); if(pagesLoaded.info) renderInfoCards(); if(pagesLoaded.alerts) renderAlertsTable('all'); };
         window.closeModal = (id) => { document.getElementById(id).style.display='none'; }
-        
-        // --- CALCULATOR ---
-        window.doCalc = () => {
-            let s = new Date(document.getElementById('cal-start').value);
-            let t = parseFloat(document.getElementById('cal-amount').value);
-            if(isNaN(t)) return;
-            let ey = new Date(s.getFullYear(), 11, 31);
-            let d1 = Math.max(0, Math.ceil((ey-s)/86400000));
-            let c1 = (t/365)*d1;
-            document.getElementById('cal-res').style.display='block';
-            document.getElementById('res-1').innerText = `${s.getFullYear()}: ${d1} วัน (${c1.toLocaleString(undefined,{maximumFractionDigits:2})} บาท)`;
-            document.getElementById('res-2').innerText = `${s.getFullYear()+1}: ${365-d1} วัน (${(t-c1).toLocaleString(undefined,{maximumFractionDigits:2})} บาท)`;
-        };
+        window.doCalc = () => { let s = new Date(document.getElementById('cal-start').value); let t = parseFloat(document.getElementById('cal-amount').value); if(isNaN(t)) return; let ey = new Date(s.getFullYear(), 11, 31); let d1 = Math.max(0, Math.ceil((ey-s)/86400000)); let c1 = (t/365)*d1; document.getElementById('cal-res').style.display='block'; document.getElementById('res-1').innerText = `${s.getFullYear()}: ${d1} วัน (${c1.toLocaleString(undefined,{maximumFractionDigits:2})} บาท)`; document.getElementById('res-2').innerText = `${s.getFullYear()+1}: ${365-d1} วัน (${(t-c1).toLocaleString(undefined,{maximumFractionDigits:2})} บาท)`; };
 
     </script>
 </body>
