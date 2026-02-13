@@ -274,24 +274,46 @@
                         </div>
                         <button class="btn-back" @click="selectedProject = null"><i class="fas fa-arrow-left"></i> ย้อนกลับ</button>
                     </div>
-                    <div class="vv-info-grid" style="grid-template-columns: 1fr 1fr;">
-                        <div class="vv-stat"><label>น้ำมันรวม (ลิตร)</label><span style="color:#f59e0b">{{ dProjects[selectedProject].fuel.toLocaleString() }}</span></div>
-                        <div class="vv-stat"><label>ค่าซ่อมรวม (บาท)</label><span style="color:#10b981">{{ dProjects[selectedProject].repair.toLocaleString() }}</span></div>
-                    </div>
-                    <div class="vv-charts">
-                        <div class="chart-box" style="display:flex; flex-direction:column;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                <div class="chart-internal-title" style="margin:0; color:#f59e0b; border:none; padding-bottom:0;">น้ำมัน ({{ projFuelScope.title }})</div>
-                                <button v-if="projFuelScope.mode !== 'year'" class="btn-back" @click="upScope('projFuel')" style="padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button>
-                            </div>
-                            <div style="flex-grow:1; position:relative;"><canvas ref="projFuelChart"></canvas></div>
+                    
+                    <!-- Drilldown List in Projects -->
+                    <div v-if="selectedProjectDetailList" class="card-list" style="margin-top: 15px;">
+                        <div class="filter-bar" style="margin-bottom:10px;">
+                            <button class="btn-back" @click="closeProjectDetailList">ย้อนกลับ</button>
+                            <h3 style="margin:0;">รายการวันที่ {{ selectedProjectDetailDate }}</h3><div></div>
                         </div>
-                        <div class="chart-box" style="display:flex; flex-direction:column;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                <div class="chart-internal-title" style="margin:0; color:#10b981; border:none; padding-bottom:0;">ซ่อมบำรุง ({{ projRepairScope.title }})</div>
-                                <button v-if="projRepairScope.mode !== 'year'" class="btn-back" @click="upScope('projRepair')" style="padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button>
+                        <div v-for="r in selectedProjectDetailList" class="item-card" @click="viewCarById(r['รหัสรถ'])">
+                            <div class="item-card-left">
+                                <i class="fas item-icon" :class="r.type==='fuel'?'fa-gas-pump':'fa-tools'" :style="{color: r.type==='fuel'?'#f59e0b':'#10b981'}"></i>
+                                <div>
+                                    <div style="font-weight:bold">{{ r['รหัสรถ'] }}</div>
+                                    <div style="font-size:0.85rem; color:#666" v-html="r.type==='repair' ? (r.item + (r.place?' <span style=\'color:#94a3b8\'>['+r.place+']</span>':'')) : 'เติมน้ำมัน'"></div>
+                                </div>
                             </div>
-                            <div style="flex-grow:1; position:relative;"><canvas ref="projRepairChart"></canvas></div>
+                            <div style="font-weight:bold" :style="{color: r.type==='fuel'?'#f59e0b':'#10b981'}">{{ parse(r[r.type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย']).toLocaleString() }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Project Charts -->
+                    <div v-else>
+                        <div class="vv-info-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="vv-stat"><label>น้ำมันรวม (ลิตร)</label><span style="color:#f59e0b">{{ dProjects[selectedProject].fuel.toLocaleString() }}</span></div>
+                            <div class="vv-stat"><label>ค่าซ่อมรวม (บาท)</label><span style="color:#10b981">{{ dProjects[selectedProject].repair.toLocaleString() }}</span></div>
+                        </div>
+                        <div class="vv-charts">
+                            <div class="chart-box" style="display:flex; flex-direction:column;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                    <div class="chart-internal-title" style="margin:0; color:#f59e0b; border:none; padding-bottom:0;">น้ำมัน ({{ projFuelScope.title }})</div>
+                                    <button v-if="projFuelScope.mode !== 'year'" class="btn-back" @click="upScope('projFuel')" style="padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button>
+                                </div>
+                                <div style="flex-grow:1; position:relative;"><canvas ref="projFuelChart"></canvas></div>
+                            </div>
+                            <div class="chart-box" style="display:flex; flex-direction:column;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                    <div class="chart-internal-title" style="margin:0; color:#10b981; border:none; padding-bottom:0;">ซ่อมบำรุง ({{ projRepairScope.title }})</div>
+                                    <button v-if="projRepairScope.mode !== 'year'" class="btn-back" @click="upScope('projRepair')" style="padding:4px 12px; font-size:0.8rem;"><i class="fas fa-arrow-up"></i> กลับ</button>
+                                </div>
+                                <div style="flex-grow:1; position:relative;"><canvas ref="projRepairChart"></canvas></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -351,7 +373,7 @@
             <div v-for="type in ['fuel', 'repair']" :key="type">
                 <div v-if="currentPage === type" class="page-section active">
                     <!-- Main View -->
-                    <div v-if="!selectedDetailList && !selectedVehicleFromChart">
+                    <div v-if="!selectedDetailList">
                         <div class="filter-bar">
                             <h2 style="margin:0;" :style="{color: type==='fuel'?'#f59e0b':'#10b981'}">สถิติ{{ type==='fuel'?'น้ำมัน':'ซ่อมบำรุง' }}</h2>
                             <div class="controls-group">
@@ -372,7 +394,7 @@
                             <div class="list-box">
                                 <div class="chart-internal-title">Top 10 ({{ type==='fuel'?'ลิตร':'บาท' }})</div>
                                 <div class="top10-list-container">
-                                    <div v-for="(item, idx) in scopes[type].top10" :key="item.id" class="top10-item" @click="viewVehicleFromChart(type, item.id)">
+                                    <div v-for="(item, idx) in scopes[type].top10" :key="item.id" class="top10-item" @click="viewCarById(item.id)">
                                         <span class="top10-rank">{{ idx+1 }}</span>
                                         <span class="top10-id">{{ item.id }}</span>
                                         <span class="top10-vol" :style="{color: type==='fuel'?'#f59e0b':'#10b981'}">{{ item.val.toLocaleString() }}</span>
@@ -385,10 +407,10 @@
                     <!-- Detail List View (Day level) -->
                     <div v-if="selectedDetailList" class="card-list">
                          <div class="filter-bar" style="margin-bottom:10px;">
-                             <button class="btn-back" @click="selectedDetailList = null">ย้อนกลับ</button>
+                             <button class="btn-back" @click="closeDetailList(type)">ย้อนกลับ</button>
                              <h3 style="margin:0;">รายการวันที่ {{ selectedDetailDate }}</h3><div></div>
                          </div>
-                         <div v-for="r in selectedDetailList" class="item-card" @click="viewVehicleFromChart(type, r['รหัสรถ'])">
+                         <div v-for="r in selectedDetailList" class="item-card" @click="viewCarById(r['รหัสรถ'])">
                             <div class="item-card-left">
                                 <i class="fas item-icon" :class="type==='fuel'?'fa-gas-pump':'fa-tools'" :style="{color: type==='fuel'?'#f59e0b':'#10b981'}"></i>
                                 <div>
@@ -397,19 +419,6 @@
                                 </div>
                             </div>
                             <div style="font-weight:bold" :style="{color: type==='fuel'?'#f59e0b':'#10b981'}">{{ parse(r[type==='fuel'?'ปริมาณ(ลิตร)':'ค่าใช้จ่าย']).toLocaleString() }}</div>
-                        </div>
-                    </div>
-
-                    <!-- Vehicle Chart View (Drilldown) -->
-                    <div v-if="selectedVehicleFromChart" class="vehicle-view" style="display:block;">
-                        <div class="vv-header">
-                            <div><h2 style="margin:0; color:var(--primary)">{{ selectedVehicleFromChart.id }}</h2><span style="color:#666">{{ selectedVehicleFromChart.plate }}</span></div>
-                            <button class="btn-back" @click="selectedVehicleFromChart = null">ย้อนกลับ</button>
-                        </div>
-                        <div class="vv-actions"><button class="btn-back" @click="viewCarById(selectedVehicleFromChart.id)">ดูข้อมูลรถคันนี้</button></div>
-                        <div class="chart-box" style="display:flex; flex-direction:column;">
-                             <div class="chart-internal-title" style="margin-bottom:10px;">สถิติ{{ type==='fuel'?'น้ำมัน':'ซ่อมบำรุง' }} (รายปี)</div>
-                             <div style="flex-grow:1; position:relative;"><canvas :ref="type+'VehicleChart'"></canvas></div>
                         </div>
                     </div>
                 </div>
@@ -554,7 +563,10 @@
                 });
                 const selectedDetailList = ref(null);
                 const selectedDetailDate = ref('');
-                const selectedVehicleFromChart = ref(null);
+
+                // Project Drilldown State
+                const selectedProjectDetailList = ref(null);
+                const selectedProjectDetailDate = ref('');
 
                 // Shop Filter State
                 const shopFilterCar = ref('');
@@ -692,7 +704,6 @@
                     selectedProject.value = null; 
                     selectedShop.value = null;
                     selectedDetailList.value = null;
-                    selectedVehicleFromChart.value = null;
                     if(['fuel','repair'].includes(p)) updateMainCharts(p);
                 };
 
@@ -701,13 +712,19 @@
                     resetScope(infoFuelScope.value); resetScope(infoRepairScope.value);
                     nextTick(() => { updateInfoCharts(); });
                 };
+                
+                // --- FIX: Race Condition Handler ---
                 const viewCarById = (id) => {
                     let c = dInfo.value.find(x => x.id === id);
                     if(!c) c = { id: id, plate: 'ไม่พบข้อมูล', brand: '-', type: '-', tax: '' };
-                    viewCar(c);
-                    // If inside shop detail, close it? No, keep context or redirect. 
-                    // Simpler to redirect to Info tab
-                    if(currentPage.value !== 'info') currentPage.value = 'info';
+                    
+                    // 1. Switch Page to ensure <canvas> exists in DOM
+                    currentPage.value = 'info';
+                    
+                    // 2. Wait for DOM update
+                    setTimeout(() => {
+                        viewCar(c); 
+                    }, 10);
                 };
 
                 const viewProject = (name) => {
@@ -737,6 +754,16 @@
                     if(ctxStr.startsWith('info')) updateInfoCharts();
                     else if(ctxStr.startsWith('proj')) updateProjCharts();
                     else updateMainCharts(ctxStr);
+                };
+
+                const closeDetailList = (type) => {
+                    selectedDetailList.value = null;
+                    updateMainCharts(type);
+                };
+
+                const closeProjectDetailList = () => {
+                    selectedProjectDetailList.value = null;
+                    nextTick(() => updateProjCharts());
                 };
 
                 const openHistory = (type) => { historyType.value = type; showHistoryModal.value = true; };
@@ -779,25 +806,6 @@
                 };
 
                 // --- CHART LOGIC (Generic) ---
-                const renderChart = (canvasRefName, type, data, valKey, color, onClick) => {
-                    const canvas = instance.refs[canvasRefName];
-                    if(!canvas) return;
-                    
-                    if(chartInstances[canvasRefName]) chartInstances[canvasRefName].destroy();
-                    
-                    // Aggregate Data
-                    let g = {};
-                    data.forEach(r => {
-                        let dt = toDate(r['วันที่']);
-                        if(dt.getTime()>0) {
-                            let k;
-                            // Simplify aggregation logic here, context passed via data preparation
-                            // But here we receive raw data and need context to group.
-                            // Better approach: Prepare labels/values BEFORE calling renderChart.
-                        }
-                    });
-                };
-                
                 // Refactored Chart Logic to handle Scope internally
                 const drawScopedChart = (canvasRefName, scope, rawData, valKey, color, drillDownFn) => {
                     const canvas = instance.refs[canvasRefName];
@@ -870,10 +878,24 @@
                     drawScopedChart('projFuelChart', projFuelScope.value, projDataFuel, 'ปริมาณ(ลิตร)', '#f59e0b', (label) => {
                         if(projFuelScope.value.mode==='year') { projFuelScope.value.mode='month'; projFuelScope.value.year=label; projFuelScope.value.title='ปี '+label; updateProjCharts(); }
                         else if(projFuelScope.value.mode==='month') { projFuelScope.value.mode='day'; projFuelScope.value.month=label; projFuelScope.value.title='เดือน '+label; updateProjCharts(); }
+                        else {
+                            // Show Project List specific to Fuel
+                            let mIdx = MONTHS.indexOf(projFuelScope.value.month);
+                            let dStr = `${String(label).padStart(2,'0')}/${String(mIdx+1).padStart(2,'0')}/${projFuelScope.value.year}`;
+                            selectedProjectDetailDate.value = dStr;
+                            selectedProjectDetailList.value = projDataFuel.filter(r => toDate(r['วันที่']).getDate() == label).map(r => ({...r, type: 'fuel'}));
+                        }
                     });
                     drawScopedChart('projRepairChart', projRepairScope.value, projDataRepair, 'ค่าใช้จ่าย', '#10b981', (label) => {
                         if(projRepairScope.value.mode==='year') { projRepairScope.value.mode='month'; projRepairScope.value.year=label; projRepairScope.value.title='ปี '+label; updateProjCharts(); }
                         else if(projRepairScope.value.mode==='month') { projRepairScope.value.mode='day'; projRepairScope.value.month=label; projRepairScope.value.title='เดือน '+label; updateProjCharts(); }
+                        else {
+                            // Show Project List specific to Repair
+                            let mIdx = MONTHS.indexOf(projRepairScope.value.month);
+                            let dStr = `${String(label).padStart(2,'0')}/${String(mIdx+1).padStart(2,'0')}/${projRepairScope.value.year}`;
+                            selectedProjectDetailDate.value = dStr;
+                            selectedProjectDetailList.value = projDataRepair.filter(r => toDate(r['วันที่']).getDate() == label).map(r => ({...r, type: 'repair'}));
+                        }
                     });
                 };
 
@@ -911,22 +933,6 @@
                                 selectedDetailList.value = filteredData.filter(r => toDate(r['วันที่']).getDate() == label);
                             }
                         });
-                    });
-                };
-
-                const viewVehicleFromChart = (type, id) => {
-                    let car = dInfo.value.find(x => x.id === id);
-                    if(!car) car = { id: id, plate: 'ไม่พบข้อมูล' };
-                    selectedVehicleFromChart.value = car;
-                    
-                    nextTick(() => {
-                        let raw = type==='fuel' ? dFuel.value : dRepair.value;
-                        let valKey = type==='fuel' ? 'ปริมาณ(ลิตร)' : 'ค่าใช้จ่าย';
-                        let color = type==='fuel' ? '#f59e0b' : '#10b981';
-                        let carData = raw.filter(x => x['รหัสรถ']===id);
-                        
-                        // Always year mode for vehicle drilldown chart
-                        drawScopedChart(type+'VehicleChart', {mode:'year'}, carData, valKey, color, ()=>{});
                     });
                 };
 
@@ -970,11 +976,13 @@
                     searchInfo, filteredInfo, viewCar, selectedCar, getStatusColor, formatTax, openHistory, showHistoryModal, historyData, historyType,
                     selectedProject, viewProject, projFuelScope, projRepairScope, upScope,
                     selectedShop, searchShop, filteredShops, viewShop, shopFilterCar, shopFilterMonth, filteredShopRecords, viewCarById, viewShopFromHistory,
-                    scopes, updateMainCharts, selectedDetailList, selectedDetailDate, selectedVehicleFromChart, viewVehicleFromChart,
+                    scopes, updateMainCharts, selectedDetailList, selectedDetailDate, closeDetailList,
+                    selectedProjectDetailList, selectedProjectDetailDate, closeProjectDetailList,
                     searchAlerts, filteredAlerts, openEditModal, showEditModal, editForm, saveCar, delCar, uniqueBrands, uniqueTypes,
                     showRepeatModal, openRepeatModal, checkOff,
                     calcStart, calcAmount, doCalc, calcResult,
-                    parse // Util
+                    parse, 
+                    infoFuelScope, infoRepairScope // FIX: Added missing scopes
                 };
             }
         }).mount('#app');
